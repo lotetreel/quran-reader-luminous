@@ -4,7 +4,7 @@
     "quran-reader-live": {
       "hosting": {
         "quran": [
-          "quran-reader-luminous"
+          "quran-reader-live"
         ]
       }
     }

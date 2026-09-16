@@ -23,7 +23,7 @@ Then open [http://localhost:8000](http://localhost:8000).
 ## Deploy to Firebase Hosting
 
 This repo is configured for Firebase Hosting in the `quran-reader-live`
-project (site `quran-reader-luminous`, target `quran`).
+project (site `quran-reader-live`, target `quran`).
 
 Live deploys happen automatically on pushes to `main` via GitHub Actions;
 pull requests get a preview channel.
@@ -36,7 +36,7 @@ firebase deploy --only hosting:quran --project quran-reader-live
 
 Current hosting URL:
 
-- [https://quran-reader-luminous.web.app](https://quran-reader-luminous.web.app)
+- [https://quran-reader-live.web.app](https://quran-reader-live.web.app)
 
 ## Source control
 
