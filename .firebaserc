@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "mizan-al-hikmah": {
+      "hosting": {
+        "quran": [
+          "quran-reader-luminous"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

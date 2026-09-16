@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en" data-theme="sepia" data-font="amiri" data-size="2">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="A quiet, beautiful reader for the Holy Qur'an — Arabic, transliteration, and English. Luminous verse-by-verse edition.">
+  <meta name="theme-color" content="#f6f0e2">
+  <title>Qur'an Reader · Luminous</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M44 6A26 26 0 1 0 44 58 32 32 0 0 1 44 6Z' fill='%23a67c2e'/%3E%3Cpath d='m47 20 2.6 5.4 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9Z' fill='%23a67c2e'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&family=Manrope:wght@400;500;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="progressBar" aria-hidden="true"></div>
+
+  <aside id="sidebar" aria-label="Chapters">
+    <div class="sidebar-head">
+      <div class="brand-arabic" lang="ar" dir="rtl">القرآن الكريم</div>
+      <div class="brand-sub">Qur'an Reader · Luminous</div>
+    </div>
+    <div class="search-row">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input id="chapterSearch" type="search" placeholder="Search surah…" autocomplete="off" aria-label="Search surah">
+    </div>
+    <div id="chapterList" role="list"></div>
+  </aside>
+  <div id="backdrop" hidden></div>
+
+  <main id="main">
+    <header id="topbar">
+      <button id="menuBtn" class="icon-btn" aria-label="Toggle chapter list">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div id="topbarTitle" class="tb-title">
+        <span id="tbName" class="tb-name">…</span>
+        <span id="tbArabic" class="tb-arabic" lang="ar" dir="rtl">…</span>
+      </div>
+      <div class="tb-actions">
+        <button id="jumpBtn" class="icon-btn" aria-label="Go to verse" title="Go to verse">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M11 8v6M8 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button id="settingsBtn" class="icon-btn" aria-label="Reader settings" title="Settings">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h10M18 8h2M4 16h4M12 16h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="16" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="reader">
+      <div id="readerInner"></div>
+    </div>
+
+    <nav id="bottomNav" aria-label="Surah navigation">
+      <button id="prevBtn" class="bn-btn"><span class="bn-dir">‹ Previous</span><span class="bn-name">—</span></button>
+      <button id="nextBtn" class="bn-btn"><span class="bn-dir">Next ›</span><span class="bn-name">—</span></button>
+    </nav>
+  </main>
+
+  <div id="settingsPanel" class="panel" hidden>
+    <div class="panel-section">
+      <div class="panel-label">Reading mode</div>
+      <div class="opt-row" id="modeRow">
+        <button data-opt="scroll">Scroll</button>
+        <button data-opt="verse">Verse by verse</button>
+        <button data-opt="luminous">Luminous</button>
+      </div>
+      <label class="switch-row vb-only"><span>Auto-fit large verses</span><input type="checkbox" id="fitToggle"></label>
+    </div>
+    <div class="panel-section">
+      <div class="panel-label">Theme</div>
+      <div class="opt-row" id="themeRow">
+        <button data-opt="day">Day</button>
+        <button data-opt="sepia">Sepia</button>
+        <button data-opt="night">Night</button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-label">Arabic font</div>
+      <div class="opt-row" id="fontRow">
+        <button data-opt="amiri">Amiri</button>
+        <button data-opt="scheherazade">Scheherazade</button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-label">Arabic size</div>
+      <div class="opt-row size-row" id="sizeRow">
+        <button data-opt="0"><span class="a1">A</span></button>
+        <button data-opt="1"><span class="a2">A</span></button>
+        <button data-opt="2"><span class="a3">A</span></button>
+        <button data-opt="3"><span class="a4">A</span></button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <label class="switch-row"><span>Transliteration</span><input type="checkbox" id="translitToggle"></label>
+      <label class="switch-row"><span>English</span><input type="checkbox" id="englishToggle"></label>
+    </div>
+  </div>
+
+  <div id="jumpOverlay" class="overlay" hidden>
+    <div class="jump-card" role="dialog" aria-label="Go to verse">
+      <div class="jump-title">Go to verse</div>
+      <input id="jumpInput" placeholder="e.g. 2:255" inputmode="numeric" autocomplete="off" aria-label="Surah and verse">
+      <div class="jump-hint">Surah:verse — or a surah number alone</div>
+      <button id="jumpClose" class="jump-close">Close</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
