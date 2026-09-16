@@ -22,7 +22,7 @@ const defaults = {
   sura: 1,
   aya: null,
   theme: "sepia",
-  font: "amiri",
+  font: "scheherazade",
   size: 2,
   mode: "luminous",
   fit: true,
