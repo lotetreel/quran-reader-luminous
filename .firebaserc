@@ -1,7 +1,7 @@
 {
   "projects": {},
   "targets": {
-    "mizan-al-hikmah": {
+    "quran-reader-live": {
       "hosting": {
         "quran": [
           "quran-reader-luminous"

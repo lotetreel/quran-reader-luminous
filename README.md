@@ -22,7 +22,7 @@ Then open [http://localhost:8000](http://localhost:8000).
 
 ## Deploy to Firebase Hosting
 
-This repo is configured for Firebase multi-site hosting in the `mizan-al-hikmah`
+This repo is configured for Firebase Hosting in the `quran-reader-live`
 project (site `quran-reader-luminous`, target `quran`).
 
 Live deploys happen automatically on pushes to `main` via GitHub Actions;
@@ -31,7 +31,7 @@ pull requests get a preview channel.
 Manual deploy:
 
 ```powershell
-firebase deploy --only hosting:quran --project mizan-al-hikmah
+firebase deploy --only hosting:quran --project quran-reader-live
 ```
 
 Current hosting URL:
