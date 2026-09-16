@@ -24,7 +24,7 @@ const defaults = {
   theme: "sepia",
   font: "amiri",
   size: 2,
-  mode: "scroll",
+  mode: "luminous",
   fit: true,
   translit: true,
   english: true,
