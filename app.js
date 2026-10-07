@@ -16,6 +16,7 @@ const arDigits = (n) => String(n).replace(/\d/g, (d) => ARABIC_DIGITS[+d]);
 const pad3 = (n) => String(n).padStart(3, "0");
 const TOTAL = 114;
 const THEME_COLORS = { day: "#fafaf7", sepia: "#f6f0e2", night: "#14110d" };
+const EN_SCALES = [0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.45, 1.6, 1.8]; // keep in sync with html[data-ensize] in styles.css
 const SETTINGS_KEY = "quran-reader.settings.v1";
 
 const defaults = {
@@ -24,6 +25,7 @@ const defaults = {
   theme: "sepia",
   font: "scheherazade",
   size: 2,
+  enSize: 2,
   mode: "luminous",
   fit: true,
   translit: true,
@@ -615,6 +617,7 @@ function applySettings() {
   root.dataset.theme = settings.theme;
   root.dataset.font = settings.font;
   root.dataset.size = String(settings.size);
+  root.dataset.ensize = String(settings.enSize);
   root.dataset.mode = settings.mode;
   $("#translitToggle").checked = settings.translit;
   $("#englishToggle").checked = settings.english;
@@ -622,6 +625,7 @@ function applySettings() {
   setActiveOptions("themeRow", String(settings.theme));
   setActiveOptions("fontRow", settings.font);
   setActiveOptions("sizeRow", String(settings.size));
+  $("#enSizeReadout").textContent = Math.round(EN_SCALES[settings.enSize] * 100) + "%";
   setActiveOptions("modeRow", settings.mode);
   document.querySelector('meta[name="theme-color"]').content = THEME_COLORS[settings.theme];
   if (settings.mode === "verse") {
@@ -637,6 +641,16 @@ function setActiveOptions(rowId, value) {
   for (const btn of document.getElementById(rowId).querySelectorAll("button")) {
     btn.classList.toggle("active", btn.dataset.opt === value);
   }
+}
+
+function adjustEnSize(delta) {
+  const max = EN_SCALES.length - 1;
+  const cur = Math.min(max, Math.max(0, settings.enSize | 0));
+  const next = Math.min(max, Math.max(0, cur + delta));
+  if (next === cur) return;
+  settings.enSize = next;
+  saveSettings();
+  applySettings();
 }
 
 function reRenderVerses() {
@@ -801,6 +815,8 @@ function bindEvents() {
     saveSettings();
     applySettings();
   });
+  $("#enSizeDown").addEventListener("click", () => adjustEnSize(-1));
+  $("#enSizeUp").addEventListener("click", () => adjustEnSize(1));
   $("#modeRow").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if (!btn || btn.dataset.opt === settings.mode) return;

@@ -17,19 +17,32 @@
   /* size presets (base) */
   --ar-size: 1.85rem;
   --ar-line: 2.3;
-  --en-size: 1.05rem;
+  --en-base: 1.05rem;
+  --en-scale: 1;
+  --en-size: calc(var(--en-base) * var(--en-scale));
   --tr-size: 0.97rem;
 }
-html[data-size="0"] { --ar-size: 1.42rem; --en-size: 0.95rem; --tr-size: 0.88rem; }
-html[data-size="1"] { --ar-size: 1.62rem; --en-size: 1.0rem;  --tr-size: 0.92rem; }
-html[data-size="2"] { --ar-size: 1.85rem; --en-size: 1.05rem; --tr-size: 0.97rem; }
-html[data-size="3"] { --ar-size: 2.25rem; --en-size: 1.13rem; --tr-size: 1.03rem; }
+html[data-size="0"] { --ar-size: 1.42rem; --en-base: 0.95rem; --tr-size: 0.88rem; }
+html[data-size="1"] { --ar-size: 1.62rem; --en-base: 1.0rem;  --tr-size: 0.92rem; }
+html[data-size="2"] { --ar-size: 1.85rem; --en-base: 1.05rem; --tr-size: 0.97rem; }
+html[data-size="3"] { --ar-size: 2.25rem; --en-base: 1.13rem; --tr-size: 1.03rem; }
+
+/* English size adjustment — keep in sync with EN_SCALES in app.js */
+html[data-ensize="0"] { --en-scale: 0.8; }
+html[data-ensize="1"] { --en-scale: 0.9; }
+html[data-ensize="2"] { --en-scale: 1; }
+html[data-ensize="3"] { --en-scale: 1.1; }
+html[data-ensize="4"] { --en-scale: 1.2; }
+html[data-ensize="5"] { --en-scale: 1.3; }
+html[data-ensize="6"] { --en-scale: 1.45; }
+html[data-ensize="7"] { --en-scale: 1.6; }
+html[data-ensize="8"] { --en-scale: 1.8; }
 
 @media (max-width: 640px) {
-  html[data-size="0"] { --ar-size: 1.32rem; --en-size: 0.92rem; --tr-size: 0.85rem; }
-  html[data-size="1"] { --ar-size: 1.5rem;  --en-size: 0.97rem; --tr-size: 0.9rem;  }
-  html[data-size="2"] { --ar-size: 1.68rem; --en-size: 1.0rem;  --tr-size: 0.93rem; }
-  html[data-size="3"] { --ar-size: 2.0rem;  --en-size: 1.06rem; --tr-size: 0.98rem; }
+  html[data-size="0"] { --ar-size: 1.32rem; --en-base: 0.92rem; --tr-size: 0.85rem; }
+  html[data-size="1"] { --ar-size: 1.5rem;  --en-base: 0.97rem; --tr-size: 0.9rem;  }
+  html[data-size="2"] { --ar-size: 1.68rem; --en-base: 1.0rem;  --tr-size: 0.93rem; }
+  html[data-size="3"] { --ar-size: 2.0rem;  --en-base: 1.06rem; --tr-size: 0.98rem; }
   :root { --ar-line: 2.15; }
 }
 
@@ -702,6 +715,27 @@ html[data-mode="verse"] .sh-names { margin-top: 0.3rem; font-size: 0.98rem; }
 .size-row .a2 { font-size: 0.92rem; }
 .size-row .a3 { font-size: 1.12rem; }
 .size-row .a4 { font-size: 1.35rem; }
+
+.stepper-row { display: flex; align-items: center; gap: 7px; }
+.stepper-row button {
+  width: 46px;
+  padding: 9px 6px;
+  font-size: 1.05rem; font-weight: 700;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.stepper-row button:hover { border-color: var(--gold); color: var(--text); }
+.stepper-readout {
+  flex: 1;
+  text-align: center;
+  font-size: 0.84rem; font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 .switch-row {
   display: flex; align-items: center; justify-content: space-between;
