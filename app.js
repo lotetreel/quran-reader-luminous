@@ -339,7 +339,7 @@ function fitVerse() {
     if (!h || !w) return;
     const cap = presenting ? 2.2 : 1; // on a projector, fill the stage instead of only shrinking
     const raw = Math.min(cap, (fit.clientHeight - pad * 2) / h, (fit.clientWidth - pad * 2) / w);
-    const s = Math.max(raw, 0.6); // floor: below this the verse overflows and scrolls instead of shrinking tiny
+    const s = Math.max(raw, 0.34); // no-scroll guarantee: shrink as far as needed at large text sizes
     if (isFinite(s) && s !== 1) {
       card.style.transform = `scale(${s})`;
       anim.style.height = Math.ceil(h * s) + "px";
@@ -544,7 +544,7 @@ function fitLuminous() {
     const avail = center.clientHeight - 20;
     const h = verse.offsetHeight;
     if (!h || !avail) return;
-    if (h > avail) { verse.style.transform = `scale(${Math.max(avail / h, 0.5)})`; return; }
+    if (h > avail) { verse.style.transform = `scale(${Math.max(avail / h, 0.34)})`; return; }
     if (presenting) {
       const w = verse.offsetWidth;
       const up = Math.min(avail / h, (center.clientWidth - 40) / w, 2.2);
