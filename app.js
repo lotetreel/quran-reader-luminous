@@ -47,6 +47,22 @@ const app = {
 
 let chapterFilter = "";
 
+/* ============================== deep links (#sura/aya) ============================== */
+
+function parseHash() {
+  const m = (location.hash || "").match(/^#(\d{1,3})(?:[:/](\d{1,3}))?$/);
+  if (!m) return null;
+  const s = +m[1];
+  const a = m[2] ? +m[2] : null;
+  if (s < 1 || s > TOTAL || (a !== null && a < 1)) return null;
+  return { s, a };
+}
+
+function setHash(sura, aya) {
+  const want = aya ? `#${sura}/${aya}` : `#${sura}`;
+  if (location.hash !== want) history.replaceState(null, "", want);
+}
+
 /* ============================== init ============================== */
 
 async function init() {
@@ -70,7 +86,8 @@ async function init() {
     return;
   }
   renderChapterList();
-  openSurah(settings.sura, settings.aya);
+  const deep = parseHash();
+  openSurah(deep ? deep.s : settings.sura, deep ? deep.a : settings.aya);
 }
 
 /* ============================== surah loading ============================== */
@@ -81,6 +98,7 @@ async function openSurah(n, aya = null) {
   settings.sura = n;
   settings.aya = (settings.mode === "verse" || settings.mode === "luminous") ? (aya ?? 1) : null;
   saveSettings();
+  setHash(n, settings.aya);
 
   updateTopbar();
   updateBottomNav();
@@ -294,6 +312,7 @@ function renderVerse(dir = 0) {
 
   document.title = `${ch.transliteration} ${ch.sura}:${a} — Qur'an Reader`;
   $("#progressBar").style.width = (a / ch.verse_count) * 100 + "%";
+  setHash(ch.sura, a);
 
   if (typeof ResizeObserver !== "undefined") {
     if (!fitRO) fitRO = new ResizeObserver(() => fitVerse());
@@ -318,9 +337,10 @@ function fitVerse() {
     const h = card.offsetHeight;
     const w = card.offsetWidth;
     if (!h || !w) return;
-    const raw = Math.min(1, (fit.clientHeight - pad * 2) / h, (fit.clientWidth - pad * 2) / w);
+    const cap = presenting ? 2.2 : 1; // on a projector, fill the stage instead of only shrinking
+    const raw = Math.min(cap, (fit.clientHeight - pad * 2) / h, (fit.clientWidth - pad * 2) / w);
     const s = Math.max(raw, 0.6); // floor: below this the verse overflows and scrolls instead of shrinking tiny
-    if (isFinite(s) && s < 1) {
+    if (isFinite(s) && s !== 1) {
       card.style.transform = `scale(${s})`;
       anim.style.height = Math.ceil(h * s) + "px";
     }
@@ -443,6 +463,7 @@ function renderLuminous(dir = 0) {
 
   document.title = `${ch.transliteration} ${ch.sura}:${a} — Qur'an Reader · Luminous`;
   $("#progressBar").style.width = (a / ch.verse_count) * 100 + "%";
+  setHash(ch.sura, a);
 
   if (typeof ResizeObserver !== "undefined") {
     if (!lumRO) lumRO = new ResizeObserver(() => fitLuminous());
@@ -521,9 +542,14 @@ function fitLuminous() {
     if (!verse.isConnected || !center.contains(verse)) return;
     verse.style.transform = "";
     const avail = center.clientHeight - 20;
-    const h = verse.scrollHeight;
-    if (!h || !avail || h <= avail) return;
-    verse.style.transform = `scale(${Math.max(avail / h, 0.5)})`;
+    const h = verse.offsetHeight;
+    if (!h || !avail) return;
+    if (h > avail) { verse.style.transform = `scale(${Math.max(avail / h, 0.5)})`; return; }
+    if (presenting) {
+      const w = verse.offsetWidth;
+      const up = Math.min(avail / h, (center.clientWidth - 40) / w, 2.2);
+      if (up > 1.02) verse.style.transform = `scale(${up})`;
+    }
   });
 }
 
@@ -661,6 +687,58 @@ function reRenderVerses() {
   window.scrollTo(0, y);
 }
 
+/* ============================== presentation mode ============================== */
+
+let presenting = false;
+let wakeLock = null;
+let hudTimer = null;
+
+function setPresent(on) {
+  if (on === presenting) return;
+  presenting = on;
+  document.body.classList.toggle("present", on);
+  $("#presentHud").hidden = !on;
+  $("#presentHint").hidden = !on;
+  $("#presentToggle").checked = on;
+  if (on) {
+    if (settings.mode === "scroll") {
+      settings.mode = "luminous";
+      settings.aya = settings.aya ?? 1;
+      saveSettings();
+      applySettings();
+      if (app.surah) renderReader();
+    }
+    if (settings.theme !== "night") {
+      settings.theme = "night";
+      saveSettings();
+      applySettings();
+    }
+    const root = document.documentElement;
+    if (root.requestFullscreen) root.requestFullscreen().catch(() => { /* still present, just not fullscreen */ });
+    if (navigator.wakeLock) {
+      navigator.wakeLock.request("screen").then((wl) => {
+        wakeLock = wl;
+        wl.addEventListener("release", () => { wakeLock = null; });
+      }).catch(() => { /* unsupported over plain http — fine */ });
+    }
+    armHudHide();
+  } else {
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+    clearTimeout(hudTimer);
+    document.body.classList.remove("hud-hidden");
+    if (settings.mode === "verse") fitVerse();
+    else if (settings.mode === "luminous") fitLuminous();
+  }
+}
+
+// HUD + cursor fade out after a few idle seconds; any pointer move brings them back
+function armHudHide() {
+  clearTimeout(hudTimer);
+  document.body.classList.remove("hud-hidden");
+  hudTimer = setTimeout(() => { if (presenting) document.body.classList.add("hud-hidden"); }, 4000);
+}
+
 /* ============================== loader / errors ============================== */
 
 function showLoader(label) {
@@ -790,7 +868,7 @@ function bindEvents() {
     panel.hidden = !panel.hidden;
   });
   document.addEventListener("click", (e) => {
-    if (!panel.hidden && !panel.contains(e.target) && !$("#settingsBtn").contains(e.target)) {
+    if (!panel.hidden && !panel.contains(e.target) && !$("#settingsBtn").contains(e.target) && !e.target.closest("#presentHud")) {
       panel.hidden = true;
     }
   });
@@ -835,6 +913,7 @@ function bindEvents() {
     saveSettings();
     if (settings.mode === "verse") fitVerse();
   });
+  $("#presentToggle").addEventListener("change", (e) => setPresent(e.target.checked));
   $("#translitToggle").addEventListener("change", (e) => {
     settings.translit = e.target.checked;
     saveSettings();
@@ -866,10 +945,19 @@ function bindEvents() {
       if (document.body.classList.contains("nav-open")) return document.body.classList.remove("nav-open");
       return;
     }
-    if (e.target instanceof Element && e.target.matches("input, textarea")) return;
+    const target = e.target instanceof Element ? e.target : null;
+    if (target && target.matches("input, textarea, select")) return;
     if (!$("#jumpOverlay").hidden) return;
+    if (e.key === "p" || e.key === "P") { setPresent(!presenting); return; }
+    // a focused button already acts on Space/Enter natively — don't double-step
+    if (target && target.matches("button") && (e.key === " " || e.key === "Enter")) return;
     const inVerse = document.documentElement.dataset.mode === "verse" || document.documentElement.dataset.mode === "luminous";
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    if (inVerse && (e.key === " " || e.key === "Enter")) {
+      e.preventDefault();
+      const dir = e.shiftKey ? -1 : 1;
+      verseStep(dir);
+      flashLumNav(dir);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       const dir = e.key === "ArrowRight" ? 1 : -1;
       if (inVerse) {
         if (e.altKey) openSurah(settings.sura + dir);
@@ -918,6 +1006,48 @@ function bindEvents() {
     }
     swipeX = null;
   }, { passive: true });
+
+  // presentation: HUD controls, click-to-step, idle fade, fullscreen/focus hooks
+  $("#presentGear").addEventListener("click", (e) => {
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+  });
+  $("#presentExit").addEventListener("click", () => setPresent(false));
+  document.addEventListener("click", (e) => {
+    if (!presenting) return;
+    if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, button, a, input, select, .lum-captions, .vb-foot")) return;
+    const dir = e.clientX < window.innerWidth * 0.28 ? -1 : 1;
+    verseStep(dir);
+    flashLumNav(dir);
+  });
+  window.addEventListener("pointermove", () => { if (presenting) armHudHide(); }, { passive: true });
+  window.addEventListener("pointerdown", () => { if (presenting) armHudHide(); }, { passive: true });
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement && presenting) setPresent(false);
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (presenting && document.visibilityState === "visible" && !wakeLock && navigator.wakeLock) {
+      navigator.wakeLock.request("screen").then((wl) => {
+        wakeLock = wl;
+        wl.addEventListener("release", () => { wakeLock = null; });
+      }).catch(() => {});
+    }
+  });
+
+  // external hash edits (typing a deep link, another tab) navigate the reader
+  window.addEventListener("hashchange", () => {
+    const h = parseHash();
+    if (!h || app.loading) return;
+    if (h.s === settings.sura) {
+      if (settings.mode !== "scroll" && (h.a ?? settings.aya) !== settings.aya) {
+        settings.aya = h.a ?? settings.aya ?? 1;
+        saveSettings();
+        renderCurrent();
+      }
+      return;
+    }
+    openSurah(h.s, h.a);
+  });
 
 }
 

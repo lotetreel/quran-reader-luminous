@@ -1162,3 +1162,111 @@ html[data-mode="luminous"] #progressBar {
 @media (max-width: 899px) {
   .lum-captions { height: min(26vh, 170px); }
 }
+
+/* ============================================================
+   Presentation mode — one toggle turns the verse modes into a
+   clean projector view: chrome hidden, larger type, verses
+   scaled up to fill the stage, HUD + cursor fade when idle.
+   ============================================================ */
+.panel-hint {
+  margin-top: 8px;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--faint);
+}
+html[data-mode="scroll"] .modes-only { display: none; }
+
+body.present { --topbar-h: 0px; }
+body.present #topbar,
+body.present #backdrop { display: none; }
+body.present #sidebar { transform: translateX(-100%) !important; }
+body.present #main { margin-left: 0 !important; }
+body.present #bottomNav { display: none !important; }
+html[data-mode="verse"] body.present #reader {
+  height: 100vh;
+  height: 100dvh;
+  max-width: min(92vw, 1440px);
+  padding: 16px 3vw 10px;
+}
+html[data-mode="verse"] body.present .vb-compact { display: none; }
+html[data-mode="verse"] body.present .vb-top { gap: 3px; }
+html[data-mode="verse"] body.present .vb-card { padding: 10px 0; }
+html[data-mode="verse"] body.present .vb-arabic { line-height: 1.75; }
+html[data-mode="verse"] body.present .vb-translit { line-height: 1.4; }
+html[data-mode="verse"] body.present .vb-english { line-height: 1.45; }
+html[data-mode="luminous"] body.present #reader {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* larger type on the projector: settings still pick the base,
+   presentation multiplies it */
+body.present .sh-arabic { font-size: clamp(2.2rem, 4vw, 3.6rem); }
+body.present .vb-ref { font-size: 1.15rem; }
+body.present .vb-basmalah { font-size: calc(var(--ar-size) * 0.9); }
+body.present .vb-arabic { font-size: calc(var(--ar-size) * 1.5); }
+body.present .vb-translit { font-size: calc(var(--tr-size) * 1.5); }
+body.present .vb-english { font-size: calc(var(--en-size) * 1.55); }
+body.present .vb-count { font-size: 1.3rem; }
+body.present .vb-btn,
+body.present .lum-btn { width: 84px; height: 84px; }
+body.present .vb-btn .icon,
+body.present .lum-btn .icon { width: 34px; height: 34px; }
+
+body.present .lum-top { font-size: 1.15rem; padding-top: 24px; }
+body.present .lum-top-orn { font-size: 1.4rem; }
+body.present .lum-top-ar { font-size: 1.9rem; }
+body.present .lum-ring { width: min(72vmin, 780px); height: min(72vmin, 780px); }
+body.present .lum-verse { width: min(88%, 1180px); }
+body.present .lum-bismillah { font-size: calc(var(--ar-size) * 1.0); }
+body.present .lum-arabic { font-size: calc(var(--ar-size) * 1.25); }
+body.present .lum-num-aya { font-size: 2.8rem; }
+body.present .lum-num-total { font-size: 1.1rem; }
+body.present .lum-captions { width: min(88%, 1000px); height: min(23vh, 300px); padding-bottom: 12px; }
+body.present .lum-translit { font-size: calc(var(--tr-size) * 1.25); }
+body.present .lum-english { font-size: calc(var(--en-size) * 1.5); }
+body.present .lum-nav { width: min(88%, 940px); padding-bottom: 30px; }
+body.present .lum-count { font-size: 1.35rem; }
+
+/* --- HUD + hint --- */
+#presentHud {
+  position: fixed; right: 16px; bottom: 16px;
+  display: flex; gap: 8px; padding: 8px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.ph-btn {
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.ph-btn:hover { border-color: var(--gold); color: var(--gold); }
+.ph-btn .icon { width: 20px; height: 20px; }
+#presentHint {
+  position: fixed; left: 50%; bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 74;
+  pointer-events: none;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 999px;
+  transition: opacity 0.55s ease;
+}
+body.hud-hidden #presentHud { opacity: 0; pointer-events: none; transform: translateY(10px); }
+body.hud-hidden #presentHint { opacity: 0; }
+@media (max-width: 640px) {
+  #presentHint { display: none; }
+}
+body.hud-hidden, body.hud-hidden * { cursor: none; }
