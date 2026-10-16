@@ -386,19 +386,13 @@ body.nav-open #backdrop { opacity: 1; }
 }
 
 .ayah-end {
-  display: inline-grid; place-items: center;
-  min-width: 1.95em; height: 1.95em;
-  margin-inline-start: 0.45em;
-  vertical-align: middle;
-  border: 1.5px solid var(--gold);
-  border-radius: 50%;
-  background: var(--gold-soft);
+  font-family: var(--font-arabic);
+  font-size: 1em;
+  font-weight: 400;
   color: var(--gold);
-  font-size: calc(var(--ar-size) * 0.5);
-  font-family: var(--font-ui);
-  font-weight: 700;
-  line-height: 1;
+  white-space: nowrap;
 }
+.lum-tail { white-space: nowrap; }
 
 .verse-translit {
   margin-top: 0.55rem;

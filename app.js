@@ -14,6 +14,9 @@ const el = (tag, className) => {
 const ARABIC_DIGITS = "٠١٢٣٤٥٦٧٨٩";
 const arDigits = (n) => String(n).replace(/\d/g, (d) => ARABIC_DIGITS[+d]);
 const pad3 = (n) => String(n).padStart(3, "0");
+// U+06DD END OF AYAH: the Arabic fonts draw it as the ornament with the
+// number inside, as in a printed mushaf
+const ayahMark = (n) => "\u06DD" + arDigits(n);
 const TOTAL = 114;
 const THEME_COLORS = { day: "#fafaf7", sepia: "#f6f0e2", night: "#14110d" };
 const EN_SCALES = [0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.45, 1.6, 1.8]; // keep in sync with html[data-ensize] in styles.css
@@ -195,9 +198,9 @@ function renderVerses(container) {
     const arabic = el("div", "verse-arabic");
     arabic.lang = "ar";
     arabic.dir = "rtl";
-    arabic.appendChild(document.createTextNode(v.arabic + " "));
+    arabic.appendChild(document.createTextNode(v.arabic + "\u00A0"));
     const end = el("span", "ayah-end");
-    end.textContent = arDigits(v.aya);
+    end.textContent = ayahMark(v.aya);
     arabic.appendChild(end);
     art.appendChild(arabic);
 
@@ -272,9 +275,9 @@ function renderVerse(dir = 0) {
   const arabic = el("div", "vb-arabic");
   arabic.lang = "ar";
   arabic.dir = "rtl";
-  arabic.appendChild(document.createTextNode(v.arabic + " "));
+  arabic.appendChild(document.createTextNode(v.arabic + "\u00A0"));
   const end = el("span", "ayah-end");
-  end.textContent = arDigits(a);
+  end.textContent = ayahMark(a);
   arabic.appendChild(end);
   card.appendChild(arabic);
 
@@ -509,19 +512,21 @@ function buildLumVerse(ch, a, v, dir) {
   const arab = verse.querySelector(".lum-arabic");
   const words = v.arabic.split(/\s+/).filter(Boolean);
   const t0 = 300, stepMs = 70;
+  const tail = el("span", "lum-tail");
   words.forEach((w, i) => {
     const sp = el("span", "lum-word");
     sp.textContent = w;
     sp.style.animationDelay = t0 + i * stepMs + "ms";
     sp.setAttribute("aria-hidden", "true");
-    arab.appendChild(sp);
-    if (i < words.length - 1) arab.appendChild(document.createTextNode(" "));
+    if (i === words.length - 1) tail.appendChild(sp);
+    else arab.append(sp, document.createTextNode(" "));
   });
   const end = el("span", "ayah-end lum-word");
-  end.textContent = arDigits(a);
+  end.textContent = ayahMark(a);
   end.style.animationDelay = t0 + words.length * stepMs + "ms";
   end.setAttribute("aria-hidden", "true");
-  arab.appendChild(end);
+  tail.append(document.createTextNode("\u00A0"), end);
+  arab.appendChild(tail);
 
   // captions land after the Arabic has finished revealing
   const capDelay = t0 + (words.length + 1) * stepMs + 250;
