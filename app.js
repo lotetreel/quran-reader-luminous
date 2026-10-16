@@ -31,6 +31,7 @@ const defaults = {
   translit: true,
   english: true,
   presentLayout: "auto",
+  width: "focused",
 };
 
 let settings = { ...defaults };
@@ -549,13 +550,15 @@ function fitLuminous() {
 // the stage scrolls as a whole. Big screen: grow to fill, never scroll, and
 // pick whichever layout lets the text be largest.
 const PRESENT_SPLITS = [0.5, 0.4, 0.6]; // English column's share of the width
-const PFIT_MIN = 0.2, PFIT_MAX = 2.2, READ_MIN = 0.62;
+const PFIT_MIN = 0.2, PFIT_MAX = 2.2, WIDE_MAX = 1.5, READ_MIN = 0.62;
 
 function fitLumStage(center, slide) {
   if (!slide) return;
   center.classList.remove("lum-scroll");
   center.scrollTop = 0;
-  const max = presenting ? PFIT_MAX : 1;
+  // wide reading spreads across the whole reading area and may grow a little
+  const wide = !presenting && settings.width === "wide";
+  const max = presenting ? PFIT_MAX : wide ? WIDE_MAX : 1;
   const cs = getComputedStyle(center);
   const availH = center.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
   const availW = center.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -596,7 +599,7 @@ function fitLumStage(center, slide) {
   const caps = slide.querySelector(".lum-captions");
   const hasCaps = caps && caps.childElementCount > 0;
   let pick;
-  if (!presenting || !hasCaps || settings.presentLayout === "stack") pick = tryStack();
+  if (!(presenting || wide) || !hasCaps || settings.presentLayout === "stack") pick = tryStack();
   else if (settings.presentLayout === "side") pick = trySide();
   else {
     // auto: keep the classic stacked look unless the verse had to shrink
@@ -707,6 +710,7 @@ function applySettings() {
   root.dataset.size = String(settings.size);
   root.dataset.ensize = String(settings.enSize);
   root.dataset.mode = settings.mode;
+  root.dataset.width = settings.width;
   $("#translitToggle").checked = settings.translit;
   $("#englishToggle").checked = settings.english;
   $("#fitToggle").checked = settings.fit;
@@ -716,6 +720,7 @@ function applySettings() {
   $("#enSizeReadout").textContent = Math.round(EN_SCALES[settings.enSize] * 100) + "%";
   setActiveOptions("modeRow", settings.mode);
   setActiveOptions("presentLayoutRow", settings.presentLayout);
+  setActiveOptions("widthRow", settings.width);
   document.querySelector('meta[name="theme-color"]').content = THEME_COLORS[settings.theme];
   if (settings.mode === "verse") {
     fitVerse();
@@ -978,6 +983,13 @@ function bindEvents() {
     const btn = e.target.closest("button");
     if (!btn) return;
     settings.presentLayout = btn.dataset.opt;
+    saveSettings();
+    applySettings();
+  });
+  $("#widthRow").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    settings.width = btn.dataset.opt;
     saveSettings();
     applySettings();
   });

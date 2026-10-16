@@ -1111,6 +1111,20 @@ body:not(.present) .lum-top { display: none; } /* the top bar already names the 
   color: var(--muted);
 }
 
+/* --- wide reading ---
+   Luminous normally sits in the 46rem reading column. "Wide" lets it
+   spread across the whole reading area: lines run longer, fitLumStage()
+   may grow the type up to WIDE_MAX, and a long verse can go side by side
+   (shared with presentation's layout rules below) instead of scrolling. */
+html[data-mode="luminous"][data-width="wide"] #reader { max-width: none; }
+html[data-width="wide"] body:not(.present) .lum-center { padding: 12px clamp(20px, 5vw, 96px) 8px; }
+html[data-width="wide"] body:not(.present) .lum-verse { width: min(100%, calc(1080px * var(--pfit))); }
+html[data-width="wide"] body:not(.present) .lum-captions { width: min(100%, calc(820px * var(--pfit))); }
+html[data-width="wide"] body:not(.present) .lp-side .lum-verse,
+html[data-width="wide"] body:not(.present) .lp-side .lum-captions { width: 100%; }
+html[data-width="wide"] body:not(.present) .lum-nav { width: min(92%, 980px); }
+html[data-width="wide"] body:not(.present) .lum-ring { width: min(82vmin, 680px); height: min(82vmin, 680px); }
+
 /* --- luminous keyframes --- */
 @keyframes lumBreathe {
   0%, 100% { transform: scale(1); opacity: 0.5; }
@@ -1208,12 +1222,14 @@ body.present .lum-ring { width: min(72vmin, 780px); height: min(72vmin, 780px); 
    are fitted together by fitPresent() via --pfit; the side gutters hold
    the prev/next buttons so no height is spent on a bottom nav bar */
 body.present .lum-center { padding: 14px clamp(84px, 9vw, 132px) clamp(30px, 6vh, 64px); }
-body.present .lum-slide { --lp-gap: clamp(28px, 4vw, 72px); }
-body.present .lum-slide.lp-stack {
+body.present .lum-slide, html[data-width="wide"] .lum-slide { --lp-gap: clamp(28px, 4vw, 72px); }
+body.present .lum-slide.lp-stack,
+html[data-width="wide"] .lum-slide.lp-stack {
   flex-direction: column;
   align-items: center;
 }
-body.present .lum-slide.lp-side {
+body.present .lum-slide.lp-side,
+html[data-width="wide"] .lum-slide.lp-side {
   display: grid;
   grid-template-columns:
     minmax(0, calc((100% - var(--lp-gap)) * var(--cap-share, 0.5)))
@@ -1223,7 +1239,8 @@ body.present .lum-slide.lp-side {
   align-items: center;
 }
 /* a soft vertical rule between the English and the Arabic */
-body.present .lum-slide.lp-side::before {
+body.present .lum-slide.lp-side::before,
+html[data-width="wide"] .lum-slide.lp-side::before {
   content: "";
   position: absolute;
   top: 6%; bottom: 6%;
@@ -1235,7 +1252,7 @@ body.present .lum-slide.lp-side::before {
   pointer-events: none;
 }
 body.present .lum-verse { width: 100%; }
-body.present .lp-side .lum-verse { grid-area: verse; }
+body.present .lp-side .lum-verse, html[data-width="wide"] .lp-side .lum-verse { grid-area: verse; }
 body.present .lum-bismillah { font-size: calc(var(--ar-size) * 1.0 * var(--pfit)); margin-bottom: 0.4em; }
 body.present .lum-arabic { font-size: calc(var(--ar-size) * 1.25 * var(--pfit)); line-height: 2.05; }
 body.present .lum-captions {
@@ -1245,8 +1262,8 @@ body.present .lum-captions {
   padding: 0;
 }
 body.present .lp-stack .lum-captions { max-width: 1500px; }
-body.present .lp-side .lum-captions { margin-top: 0; }
-body.present .lp-side .lum-captions { grid-area: caps; text-align: left; }
+body.present .lp-side .lum-captions, html[data-width="wide"] .lp-side .lum-captions { margin-top: 0; }
+body.present .lp-side .lum-captions, html[data-width="wide"] .lp-side .lum-captions { grid-area: caps; text-align: left; }
 body.present .lum-translit { font-size: calc(var(--tr-size) * 1.25 * var(--pfit)); line-height: 1.6; }
 body.present .lum-english { font-size: calc(var(--en-size) * 1.5 * var(--pfit)); line-height: 1.55; margin-top: 0.5em; }
 body.present .lum-nav {
