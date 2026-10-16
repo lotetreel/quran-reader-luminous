@@ -443,17 +443,15 @@ function renderLuminous(dir = 0) {
     fill.style.strokeDashoffset = (C * (1 - a / ch.verse_count)).toFixed(2); // glides via CSS transition
   }
 
-  // On the big screen the captions join the verse inside the centre stage,
-  // so the two can be fitted together (stacked or side by side) instead of
+  // The captions sit with the verse inside the centre stage, so the two are
+  // fitted together (stacked, or side by side on a big screen) instead of
   // the English scrolling in its own short strip.
   const { slide, caps } = buildLumVerse(ch, a, v, dir);
   const center = stage.querySelector(".lum-center");
-  stage.querySelector(".lum-captions")?.remove();
-  if (presenting) slide.appendChild(caps);
+  slide.appendChild(caps);
   const oldSlide = center.querySelector(".lum-slide");
   if (oldSlide) oldSlide.replaceWith(slide);
   else center.appendChild(slide);
-  if (!presenting) stage.insertBefore(caps, stage.querySelector(".lum-nav"));
 
   const prev = stage.querySelector(".lum-btn-prev");
   const next = stage.querySelector(".lum-btn-next");
@@ -545,24 +543,24 @@ function fitLuminous() {
   if (!center || !verse) return;
   requestAnimationFrame(() => {
     if (!verse.isConnected || !center.contains(verse)) return;
-    verse.style.transform = "";
-    if (presenting) { fitPresent(center, verse.closest(".lum-slide")); return; }
-    const avail = center.clientHeight - 20;
-    const h = verse.offsetHeight;
-    if (!h || !avail) return;
-    if (h > avail) verse.style.transform = `scale(${Math.max(avail / h, 0.34)})`;
+    fitLumStage(center, verse.closest(".lum-slide"));
   });
 }
 
-// Big-screen fit: rather than shrinking a fixed-width block, grow or shrink
-// the type itself (--pfit) so lines re-wrap across the full screen width,
-// and pick whichever layout lets the text be largest. Your Arabic/English
-// size settings keep their proportions; only the overall scale changes.
+// Rather than shrinking a fixed-width block, scale the type itself (--pfit)
+// so lines re-wrap across the available width. Your Arabic/English size
+// settings keep their proportions; only the overall scale changes.
+// Reading: only ever shrink, and never below a readable floor — past that
+// the stage scrolls as a whole. Big screen: grow to fill, never scroll, and
+// pick whichever layout lets the text be largest.
 const PRESENT_SPLITS = [0.5, 0.4, 0.6]; // English column's share of the width
-const PFIT_MIN = 0.2, PFIT_MAX = 2.2;
+const PFIT_MIN = 0.2, PFIT_MAX = 2.2, READ_MIN = 0.62;
 
-function fitPresent(center, slide) {
+function fitLumStage(center, slide) {
   if (!slide) return;
+  center.classList.remove("lum-scroll");
+  center.scrollTop = 0;
+  const max = presenting ? PFIT_MAX : 1;
   const cs = getComputedStyle(center);
   const availH = center.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
   const availW = center.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -571,7 +569,7 @@ function fitPresent(center, slide) {
   // Wrapped text grows roughly with the square of the type scale, so a
   // square-root step lands close in a few layouts; bisection is the fallback.
   const largest = () => {
-    let lo = PFIT_MIN, hi = PFIT_MAX, s = 1;
+    let lo = PFIT_MIN, hi = max, s = 1;
     for (let i = 0; i < 6; i++) {
       slide.style.setProperty("--pfit", s.toFixed(3));
       const h = slide.offsetHeight;
@@ -579,7 +577,7 @@ function fitPresent(center, slide) {
       if (ok) lo = s; else hi = s;
       if (hi - lo < 0.015) break;
       let next = s * Math.sqrt(availH / h) * (ok ? 0.995 : 0.985);
-      if (!(next > lo && next < hi)) next = ok && hi === PFIT_MAX ? PFIT_MAX : (lo + hi) / 2;
+      if (!(next > lo && next < hi)) next = ok && hi === max ? max : (lo + hi) / 2;
       s = next;
     }
     return lo;
@@ -603,7 +601,7 @@ function fitPresent(center, slide) {
   const caps = slide.querySelector(".lum-captions");
   const hasCaps = caps && caps.childElementCount > 0;
   let pick;
-  if (!hasCaps || settings.presentLayout === "stack") pick = tryStack();
+  if (!presenting || !hasCaps || settings.presentLayout === "stack") pick = tryStack();
   else if (settings.presentLayout === "side") pick = trySide();
   else {
     // auto: keep the classic stacked look unless the verse had to shrink
@@ -613,6 +611,10 @@ function fitPresent(center, slide) {
       const side = trySide();
       if (side.s > pick.s * 1.12) pick = side;
     }
+  }
+  if (!presenting && pick.s < READ_MIN) {
+    pick.s = READ_MIN;
+    center.classList.add("lum-scroll");
   }
   setLayout(pick.kind, pick.share);
   slide.style.setProperty("--pfit", pick.s.toFixed(3));

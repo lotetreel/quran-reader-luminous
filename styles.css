@@ -885,9 +885,9 @@ html[data-theme="night"] {
 
 html[data-mode="luminous"] #bottomNav { display: none; }
 html[data-mode="luminous"] #reader {
-  height: calc(100vh - var(--topbar-h));
-  height: calc(100dvh - var(--topbar-h));
-  padding: 0;
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--topbar-h) 0 0; /* start below the fixed top bar, end at the screen bottom */
   overflow: hidden;
   background: linear-gradient(180deg, var(--lum-bg-a), var(--lum-bg-b));
   transition: background 0.4s ease;
@@ -945,6 +945,7 @@ html[data-mode="luminous"] #progressBar {
   text-transform: uppercase;
   color: var(--muted);
 }
+body:not(.present) .lum-top { display: none; } /* the top bar already names the surah */
 .lum-top-orn { color: var(--gold); letter-spacing: 0; text-transform: none; font-size: 0.95rem; }
 .lum-top-ar {
   font-family: var(--font-arabic);
@@ -965,7 +966,17 @@ html[data-mode="luminous"] #progressBar {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 12px 0 8px;
   overflow: hidden;
+}
+/* a verse too long to fit at a readable size scrolls as one piece */
+.lum-center.lum-scroll {
+  overflow-y: auto;
+  align-items: flex-start;
+  padding-bottom: 40px;
+  -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 36px), transparent);
 }
 .lum-ring {
   position: absolute;
@@ -997,11 +1008,13 @@ html[data-mode="luminous"] #progressBar {
 
 /* --- verse --- */
 .lum-slide {
+  --pfit: 1;
   position: relative;
   z-index: 2;
   width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 .lum-slide.lum-from-next { animation: lumFromNext 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
 .lum-slide.lum-from-prev { animation: lumFromPrev 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
@@ -1013,7 +1026,7 @@ html[data-mode="luminous"] #progressBar {
 }
 .lum-bismillah {
   font-family: var(--font-arabic);
-  font-size: calc(var(--ar-size) * 0.72);
+  font-size: calc(var(--ar-size) * 0.72 * var(--pfit));
   line-height: var(--ar-line);
   color: var(--muted);
   margin-bottom: 1rem;
@@ -1022,7 +1035,7 @@ html[data-mode="luminous"] #progressBar {
 }
 .lum-arabic {
   font-family: var(--font-arabic);
-  font-size: calc(var(--ar-size) * 1.1);
+  font-size: calc(var(--ar-size) * 1.1 * var(--pfit));
   line-height: var(--ar-line);
 }
 .lum-word {
@@ -1033,7 +1046,7 @@ html[data-mode="luminous"] #progressBar {
   animation: lumWordIn 0.85s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 .lum-num {
-  margin-top: 1.5rem;
+  margin-top: calc(1.5rem * var(--pfit));
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -1044,7 +1057,7 @@ html[data-mode="luminous"] #progressBar {
 }
 .lum-num-aya {
   font-family: var(--font-arabic);
-  font-size: 1.85rem;
+  font-size: calc(1.85rem * clamp(0.7, var(--pfit), 1));
   line-height: 1.2;
   color: var(--gold);
   text-shadow: 0 0 26px color-mix(in srgb, var(--lum-glow) 65%, transparent);
@@ -1063,17 +1076,15 @@ html[data-mode="luminous"] #progressBar {
   position: relative;
   z-index: 2;
   width: min(92%, 660px);
+  margin-top: calc(1.1rem * var(--pfit));
   text-align: center;
-  padding: 0 4% 8px;
-  height: min(32vh, 250px);
-  overflow-y: auto;
   opacity: 0;
   animation: lumSoftIn 0.9s ease both;
   animation-delay: var(--cap-delay, 0.9s);
 }
 .lum-translit {
   font-family: var(--font-body);
-  font-size: var(--tr-size);
+  font-size: calc(var(--tr-size) * var(--pfit));
   line-height: 1.8;
   color: var(--muted);
 }
@@ -1082,7 +1093,7 @@ html[data-mode="luminous"] #progressBar {
 .lum-english {
   margin-top: 0.35rem;
   font-family: var(--font-body);
-  font-size: calc(var(--en-size) * 1.02);
+  font-size: calc(var(--en-size) * 1.02 * var(--pfit));
   line-height: 1.8;
   color: var(--text);
   opacity: 0.92;
@@ -1159,11 +1170,6 @@ html[data-mode="luminous"] #progressBar {
   .lum-ambient::before, .lum-ring-ticks { animation: none !important; }
 }
 
-/* --- luminous: phones get a shorter caption zone --- */
-@media (max-width: 899px) {
-  .lum-captions { height: min(26vh, 170px); }
-}
-
 /* ============================================================
    Presentation mode — one toggle turns the verse modes into a
    clean projector view: chrome hidden, larger type, verses
@@ -1227,7 +1233,7 @@ body.present .lum-ring { width: min(72vmin, 780px); height: min(72vmin, 780px); 
    are fitted together by fitPresent() via --pfit; the side gutters hold
    the prev/next buttons so no height is spent on a bottom nav bar */
 body.present .lum-center { padding: 14px clamp(84px, 9vw, 132px) clamp(30px, 6vh, 64px); }
-body.present .lum-slide { --pfit: 1; --lp-gap: clamp(28px, 4vw, 72px); }
+body.present .lum-slide { --lp-gap: clamp(28px, 4vw, 72px); }
 body.present .lum-slide.lp-stack {
   flex-direction: column;
   align-items: center;
@@ -1266,7 +1272,8 @@ body.present .lum-captions {
   overflow: visible;
   padding: 0;
 }
-body.present .lp-stack .lum-captions { margin-top: calc(1.1rem * var(--pfit)); max-width: 1500px; }
+body.present .lp-stack .lum-captions { max-width: 1500px; }
+body.present .lp-side .lum-captions { margin-top: 0; }
 body.present .lp-side .lum-captions { grid-area: caps; text-align: left; }
 body.present .lum-translit { font-size: calc(var(--tr-size) * 1.25 * var(--pfit)); line-height: 1.6; }
 body.present .lum-english { font-size: calc(var(--en-size) * 1.5 * var(--pfit)); line-height: 1.55; margin-top: 0.5em; }
@@ -1282,6 +1289,21 @@ body.present .lum-btn:hover { opacity: 1; }
 body.present .lum-btn .icon { width: 28px; height: 28px; }
 body.present .lum-count { display: none; }
 body.hud-hidden .lum-btn { opacity: 0; }
+/* phones and small screens: slimmer title and gutters leave more room for the verse */
+@media (max-height: 560px), (max-width: 700px) {
+  body.present .lum-top { font-size: 0.82rem; padding-top: 10px; }
+  body.present .lum-top-orn { font-size: 1rem; }
+  body.present .lum-top-ar { font-size: 1.3rem; }
+  body.present .lum-center { padding: 8px 64px 18px; }
+  body.present .lum-btn { width: 48px; height: 48px; }
+  body.present .lum-btn .icon { width: 22px; height: 22px; }
+  body.present .lum-nav { padding: 0 8px; }
+}
+@media (max-width: 700px) and (orientation: portrait) {
+  body.present .lum-center { padding: 8px 14px 76px; }
+  body.present .lum-nav { align-items: flex-end; padding: 0 14px 18px; }
+  #presentHud { left: 50%; right: auto; bottom: 18px; translate: -50% 0; }
+}
 
 /* --- HUD + hint --- */
 #presentHud {
