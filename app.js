@@ -30,6 +30,7 @@ const defaults = {
   fit: true,
   translit: true,
   english: true,
+  presentLayout: "auto",
 };
 
 let settings = { ...defaults };
@@ -68,6 +69,7 @@ function setHash(sura, aya) {
 async function init() {
   applySettings();
   bindEvents();
+  document.fonts?.ready.then(() => { if (settings.mode === "luminous") fitLuminous(); });
   updateTopbar();
   updateBottomNav();
 
@@ -441,14 +443,17 @@ function renderLuminous(dir = 0) {
     fill.style.strokeDashoffset = (C * (1 - a / ch.verse_count)).toFixed(2); // glides via CSS transition
   }
 
+  // On the big screen the captions join the verse inside the centre stage,
+  // so the two can be fitted together (stacked or side by side) instead of
+  // the English scrolling in its own short strip.
   const { slide, caps } = buildLumVerse(ch, a, v, dir);
   const center = stage.querySelector(".lum-center");
+  stage.querySelector(".lum-captions")?.remove();
+  if (presenting) slide.appendChild(caps);
   const oldSlide = center.querySelector(".lum-slide");
   if (oldSlide) oldSlide.replaceWith(slide);
   else center.appendChild(slide);
-  const oldCaps = stage.querySelector(".lum-captions");
-  if (oldCaps) oldCaps.replaceWith(caps);
-  else stage.insertBefore(caps, stage.querySelector(".lum-nav"));
+  if (!presenting) stage.insertBefore(caps, stage.querySelector(".lum-nav"));
 
   const prev = stage.querySelector(".lum-btn-prev");
   const next = stage.querySelector(".lum-btn-next");
@@ -541,16 +546,76 @@ function fitLuminous() {
   requestAnimationFrame(() => {
     if (!verse.isConnected || !center.contains(verse)) return;
     verse.style.transform = "";
+    if (presenting) { fitPresent(center, verse.closest(".lum-slide")); return; }
     const avail = center.clientHeight - 20;
     const h = verse.offsetHeight;
     if (!h || !avail) return;
-    if (h > avail) { verse.style.transform = `scale(${Math.max(avail / h, 0.34)})`; return; }
-    if (presenting) {
-      const w = verse.offsetWidth;
-      const up = Math.min(avail / h, (center.clientWidth - 40) / w, 2.2);
-      if (up > 1.02) verse.style.transform = `scale(${up})`;
-    }
+    if (h > avail) verse.style.transform = `scale(${Math.max(avail / h, 0.34)})`;
   });
+}
+
+// Big-screen fit: rather than shrinking a fixed-width block, grow or shrink
+// the type itself (--pfit) so lines re-wrap across the full screen width,
+// and pick whichever layout lets the text be largest. Your Arabic/English
+// size settings keep their proportions; only the overall scale changes.
+const PRESENT_SPLITS = [0.5, 0.4, 0.6]; // English column's share of the width
+const PFIT_MIN = 0.2, PFIT_MAX = 2.2;
+
+function fitPresent(center, slide) {
+  if (!slide) return;
+  const cs = getComputedStyle(center);
+  const availH = center.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const availW = center.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  if (availH <= 0 || availW <= 0) return;
+
+  // Wrapped text grows roughly with the square of the type scale, so a
+  // square-root step lands close in a few layouts; bisection is the fallback.
+  const largest = () => {
+    let lo = PFIT_MIN, hi = PFIT_MAX, s = 1;
+    for (let i = 0; i < 6; i++) {
+      slide.style.setProperty("--pfit", s.toFixed(3));
+      const h = slide.offsetHeight;
+      const ok = h <= availH && slide.scrollWidth <= slide.clientWidth + 1;
+      if (ok) lo = s; else hi = s;
+      if (hi - lo < 0.015) break;
+      let next = s * Math.sqrt(availH / h) * (ok ? 0.995 : 0.985);
+      if (!(next > lo && next < hi)) next = ok && hi === PFIT_MAX ? PFIT_MAX : (lo + hi) / 2;
+      s = next;
+    }
+    return lo;
+  };
+  const setLayout = (kind, share) => {
+    slide.classList.toggle("lp-stack", kind === "stack");
+    slide.classList.toggle("lp-side", kind === "side");
+    if (share) slide.style.setProperty("--cap-share", share);
+  };
+  const tryStack = () => { setLayout("stack"); return { kind: "stack", s: largest() }; };
+  const trySide = () => {
+    let best = null;
+    for (const share of PRESENT_SPLITS) {
+      setLayout("side", share);
+      const s = largest();
+      if (!best || s > best.s + 0.01) best = { kind: "side", share, s };
+    }
+    return best;
+  };
+
+  const caps = slide.querySelector(".lum-captions");
+  const hasCaps = caps && caps.childElementCount > 0;
+  let pick;
+  if (!hasCaps || settings.presentLayout === "stack") pick = tryStack();
+  else if (settings.presentLayout === "side") pick = trySide();
+  else {
+    // auto: keep the classic stacked look unless the verse had to shrink
+    // and going side by side makes it clearly bigger (wide screens)
+    pick = tryStack();
+    if (pick.s < 1 && availW > availH * 1.2) {
+      const side = trySide();
+      if (side.s > pick.s * 1.12) pick = side;
+    }
+  }
+  setLayout(pick.kind, pick.share);
+  slide.style.setProperty("--pfit", pick.s.toFixed(3));
 }
 
 function flashLumNav(dir) {
@@ -653,6 +718,7 @@ function applySettings() {
   setActiveOptions("sizeRow", String(settings.size));
   $("#enSizeReadout").textContent = Math.round(EN_SCALES[settings.enSize] * 100) + "%";
   setActiveOptions("modeRow", settings.mode);
+  setActiveOptions("presentLayoutRow", settings.presentLayout);
   document.querySelector('meta[name="theme-color"]').content = THEME_COLORS[settings.theme];
   if (settings.mode === "verse") {
     fitVerse();
@@ -721,6 +787,7 @@ function setPresent(on) {
         wl.addEventListener("release", () => { wakeLock = null; });
       }).catch(() => { /* unsupported over plain http — fine */ });
     }
+    if (settings.mode === "luminous" && app.surah) renderLuminous();
     armHudHide();
   } else {
     if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
@@ -728,7 +795,7 @@ function setPresent(on) {
     clearTimeout(hudTimer);
     document.body.classList.remove("hud-hidden");
     if (settings.mode === "verse") fitVerse();
-    else if (settings.mode === "luminous") fitLuminous();
+    else if (settings.mode === "luminous" && app.surah) renderLuminous();
   }
 }
 
@@ -914,6 +981,13 @@ function bindEvents() {
     if (settings.mode === "verse") fitVerse();
   });
   $("#presentToggle").addEventListener("change", (e) => setPresent(e.target.checked));
+  $("#presentLayoutRow").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    settings.presentLayout = btn.dataset.opt;
+    saveSettings();
+    applySettings();
+  });
   $("#translitToggle").addEventListener("change", (e) => {
     settings.translit = e.target.checked;
     saveSettings();
@@ -1015,7 +1089,7 @@ function bindEvents() {
   $("#presentExit").addEventListener("click", () => setPresent(false));
   document.addEventListener("click", (e) => {
     if (!presenting) return;
-    if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, button, a, input, select, .lum-captions, .vb-foot")) return;
+    if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, button, a, input, select, .vb-foot")) return;
     const dir = e.clientX < window.innerWidth * 0.28 ? -1 : 1;
     verseStep(dir);
     flashLumNav(dir);
