@@ -32,6 +32,7 @@ const defaults = {
   english: true,
   presentLayout: "auto",
   width: "focused",
+  backdrop: "ring",
 };
 
 let settings = { ...defaults };
@@ -408,6 +409,7 @@ function renderLuminous(dir = 0) {
     stage.dataset.sura = String(ch.sura);
     stage.innerHTML = `
     <div class="lum-ambient" aria-hidden="true"></div>
+    ${lumBackdrops()}
     <div class="lum-top">
       <span class="lum-top-orn" aria-hidden="true">۞</span>
       <span class="lum-top-name">${ch.sura} · ${escapeHtml(ch.transliteration)}</span>
@@ -622,6 +624,47 @@ function fitLumStage(center, slide) {
   slide.style.setProperty("--pfit", pick.s.toFixed(3));
 }
 
+// Alternatives to the ring behind the verse, picked in settings. All of them
+// are rendered once per stage and CSS shows the chosen one; each stays faint
+// and keeps clear of the middle, where the text sits.
+let starField = "";
+
+function lumBackdrops() {
+  if (!starField) {
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const dots = [];
+    for (let i = 0; i < 130; i++) {
+      const x = rnd() * 100, y = rnd() * 100;
+      // thin out the middle so the text has a clear field
+      const dx = (x - 50) / 50, dy = (y - 48) / 48;
+      if (dx * dx + dy * dy < 0.22 && rnd() < 0.75) continue;
+      const size = (0.8 + rnd() * rnd() * 2.2).toFixed(2);
+      const twinkle = rnd() < 0.3 ? ` lum-twinkle" style="--tw:${(5 + rnd() * 7).toFixed(1)}s;--twd:-${(rnd() * 10).toFixed(1)}s;` : `" style="`;
+      dots.push(`<i class="lum-star${twinkle}left:${x.toFixed(2)}%;top:${y.toFixed(2)}%;width:${size}px;height:${size}px;opacity:${(0.25 + rnd() * 0.5).toFixed(2)}"></i>`);
+    }
+    starField = dots.join("");
+  }
+  return `
+    <svg class="lum-bd lum-bd-lattice" aria-hidden="true">
+      <defs>
+        <pattern id="lumLattice" width="84" height="84" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="currentColor" stroke-width="1">
+            <polygon points="42.0,12.3 50.7,21.0 63.0,21.0 63.0,33.3 71.7,42.0 63.0,50.7 63.0,63.0 50.7,63.0 42.0,71.7 33.3,63.0 21.0,63.0 21.0,50.7 12.3,42.0 21.0,33.3 21.0,21.0 33.3,21.0"/>
+            <polygon points="0.0,-29.7 8.7,-21.0 21.0,-21.0 21.0,-8.7 29.7,0.0 21.0,8.7 21.0,21.0 8.7,21.0 0.0,29.7 -8.7,21.0 -21.0,21.0 -21.0,8.7 -29.7,0.0 -21.0,-8.7 -21.0,-21.0 -8.7,-21.0"/>
+            <polygon points="0.0,54.3 8.7,63.0 21.0,63.0 21.0,75.3 29.7,84.0 21.0,92.7 21.0,105.0 8.7,105.0 0.0,113.7 -8.7,105.0 -21.0,105.0 -21.0,92.7 -29.7,84.0 -21.0,75.3 -21.0,63.0 -8.7,63.0"/>
+            <polygon points="84.0,-29.7 92.7,-21.0 105.0,-21.0 105.0,-8.7 113.7,0.0 105.0,8.7 105.0,21.0 92.7,21.0 84.0,29.7 75.3,21.0 63.0,21.0 63.0,8.7 54.3,0.0 63.0,-8.7 63.0,-21.0 75.3,-21.0"/>
+            <polygon points="84.0,54.3 92.7,63.0 105.0,63.0 105.0,75.3 113.7,84.0 105.0,92.7 105.0,105.0 92.7,105.0 84.0,113.7 75.3,105.0 63.0,105.0 63.0,92.7 54.3,84.0 63.0,75.3 63.0,63.0 75.3,63.0"/>
+            <circle cx="42" cy="42" r="5"/>
+          </g>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#lumLattice)"/>
+    </svg>
+    <div class="lum-bd lum-bd-arch" aria-hidden="true"><div class="lum-arch-inner"></div></div>
+    <div class="lum-bd lum-bd-stars" aria-hidden="true">${starField}</div>`;
+}
+
 function flashLumNav(dir) {
   const btn = $(dir > 0 ? ".lum-btn-next" : ".lum-btn-prev");
   if (!btn) return;
@@ -724,6 +767,7 @@ function applySettings() {
   root.dataset.ensize = String(settings.enSize);
   root.dataset.mode = settings.mode;
   root.dataset.width = settings.width;
+  root.dataset.backdrop = settings.backdrop;
   $("#translitToggle").checked = settings.translit;
   $("#englishToggle").checked = settings.english;
   $("#fitToggle").checked = settings.fit;
@@ -734,6 +778,7 @@ function applySettings() {
   setActiveOptions("modeRow", settings.mode);
   setActiveOptions("presentLayoutRow", settings.presentLayout);
   setActiveOptions("widthRow", settings.width);
+  setActiveOptions("backdropRow", settings.backdrop);
   document.querySelector('meta[name="theme-color"]').content = THEME_COLORS[settings.theme];
   if (settings.mode === "verse") {
     fitVerse();
@@ -1296,6 +1341,13 @@ function bindEvents() {
     const btn = e.target.closest("button");
     if (!btn) return;
     settings.presentLayout = btn.dataset.opt;
+    saveSettings();
+    applySettings();
+  });
+  $("#backdropRow").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    settings.backdrop = btn.dataset.opt;
     saveSettings();
     applySettings();
   });

@@ -753,6 +753,8 @@ html[data-mode="verse"] .sh-names { margin-top: 0.3rem; font-size: 0.98rem; }
   background: var(--gold-soft);
   color: var(--gold);
 }
+.bd-row { gap: 5px; }
+.bd-row button { padding: 9px 2px; font-size: 0.76rem; }
 .size-row button { display: grid; place-items: center; padding: 7px 4px; }
 .size-row .a1 { font-size: 0.75rem; }
 .size-row .a2 { font-size: 0.92rem; }
@@ -1111,6 +1113,75 @@ body:not(.present) .lum-top { display: none; } /* the top bar already names the 
 }
 .lum-stop-a { stop-color: var(--gold); }
 .lum-stop-b { stop-color: var(--emerald); }
+
+/* --- background choices (settings › Background) ---
+   Ring is the default; the others replace it. Each one sits under the
+   text, stays faint, and is masked so the middle of the stage is clear. */
+.lum-bd {
+  position: absolute; inset: 0;
+  z-index: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  display: none;
+}
+html[data-backdrop="lattice"] .lum-bd-lattice,
+html[data-backdrop="arch"] .lum-bd-arch,
+html[data-backdrop="stars"] .lum-bd-stars { display: block; }
+html[data-backdrop]:not([data-backdrop="ring"]) .lum-ring { display: none; }
+
+/* lattice: interlaced eight-point stars, gone in the centre, faint at the rim */
+.lum-bd-lattice {
+  color: var(--gold);
+  opacity: 0.24;
+  -webkit-mask-image: radial-gradient(ellipse 70% 66% at 50% 47%, transparent 30%, rgba(0,0,0,0.55) 58%, #000 85%);
+  mask-image: radial-gradient(ellipse 70% 66% at 50% 47%, transparent 30%, rgba(0,0,0,0.55) 58%, #000 85%);
+}
+html[data-theme="night"] .lum-bd-lattice { opacity: 0.2; }
+
+/* arch: a thin double-lined mihrab framing the stage */
+.lum-bd-arch {
+  inset: clamp(14px, 4vh, 40px) clamp(14px, 5%, 72px) 0;
+  width: auto; height: auto;
+  border: 1px solid color-mix(in srgb, var(--gold) 46%, transparent);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0 / clamp(120px, 30%, 320px) clamp(120px, 30%, 320px) 0 0;
+  background: radial-gradient(70% 55% at 50% 30%, color-mix(in srgb, var(--lum-glow) 7%, transparent), transparent 75%);
+}
+.lum-arch-inner {
+  position: absolute; inset: 9px 9px 0;
+  border: 1px solid color-mix(in srgb, var(--gold) 26%, transparent);
+  border-bottom: 0;
+  border-radius: inherit;
+}
+.lum-bd-arch::after { /* small finial at the apex */
+  content: "";
+  position: absolute; left: 50%; top: -5px;
+  width: 9px; height: 9px;
+  transform: translateX(-50%) rotate(45deg);
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  background: var(--lum-bg-a);
+}
+
+/* on the big screen: start below the surah line, inside the prev/next buttons */
+body.present .lum-bd-arch {
+  top: clamp(70px, 12vh, 124px);
+  left: clamp(92px, 9.5vw, 150px);
+  right: clamp(92px, 9.5vw, 150px);
+}
+
+/* stars: a quiet scatter of points, a few slowly twinkling */
+.lum-star {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--lum-glow);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--lum-glow) 60%, transparent);
+}
+html:not([data-theme="night"]) .lum-star { background: var(--gold); box-shadow: none; }
+.lum-twinkle { animation: lumTwinkle var(--tw, 8s) ease-in-out var(--twd, 0s) infinite; }
+@keyframes lumTwinkle {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(0.45); filter: brightness(0.6); }
+}
 
 /* --- verse --- */
 .lum-slide {
