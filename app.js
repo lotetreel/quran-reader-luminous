@@ -486,11 +486,7 @@ function buildLumVerse(ch, a, v, dir) {
   const verse = el("div", "lum-verse");
   verse.innerHTML = `
     <div class="lum-bismillah-slot"></div>
-    <div class="lum-arabic" lang="ar" dir="rtl" aria-label="${escapeHtml(v.arabic)}"></div>
-    <div class="lum-num">
-      <span class="lum-num-aya" lang="ar">${arDigits(a)}</span>
-      <span class="lum-num-total">of ${ch.verse_count}</span>
-    </div>`;
+    <div class="lum-arabic" lang="ar" dir="rtl" aria-label="${escapeHtml(v.arabic)}"></div>`;
   slide.appendChild(verse);
   const caps = el("div", "lum-captions");
 
@@ -523,7 +519,6 @@ function buildLumVerse(ch, a, v, dir) {
   // captions land after the Arabic has finished revealing
   const capDelay = t0 + (words.length + 1) * stepMs + 250;
   caps.style.setProperty("--cap-delay", capDelay + "ms");
-  verse.style.setProperty("--cap-delay", capDelay + "ms");
   if (settings.translit) {
     const tr = el("div", "lum-translit");
     tr.innerHTML = v.transliteration_html; // trusted local data
@@ -775,11 +770,6 @@ function setPresent(on) {
       saveSettings();
       applySettings();
       if (app.surah) renderReader();
-    }
-    if (settings.theme !== "night") {
-      settings.theme = "night";
-      saveSettings();
-      applySettings();
     }
     const root = document.documentElement;
     if (root.requestFullscreen) root.requestFullscreen().catch(() => { /* still present, just not fullscreen */ });
