@@ -67,8 +67,9 @@ This static site is also tracked in GitHub:
 
 ## Go to, search, saved verses, juz
 
-The magnifier in the top bar (or `G`) opens one box for everything:
-type `2:255`, a surah number, `juz 30`, or words to search the English,
+The magnifier in the top bar (or `G`, or tapping the surah name) opens one
+box for everything. Pick a surah and verse from the two dropdowns and press
+Go, or type `2:255`, a surah number, `juz 30`, or words to search the English,
 transliteration or Arabic (diacritics are ignored). With the box empty it
 lists your saved verses and a 1–30 juz grid. The bookmark button (or `B`)
 saves the verse you're on; saved verses live in this browser only.

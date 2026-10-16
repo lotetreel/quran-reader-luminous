@@ -45,10 +45,11 @@
       <button id="menuBtn" class="icon-btn" aria-label="Toggle chapter list">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
-      <div id="topbarTitle" class="tb-title">
+      <button id="topbarTitle" class="tb-title" title="Choose surah and verse (G)">
         <span id="tbName" class="tb-name">…</span>
         <span id="tbArabic" class="tb-arabic" lang="ar" dir="rtl">…</span>
-      </div>
+        <svg class="tb-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <div class="tb-actions">
         <button id="bookmarkBtn" class="icon-btn" aria-label="Save this verse" title="Save this verse (B)" aria-pressed="false">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path class="bm-shape" d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
@@ -146,7 +147,13 @@
 
   <div id="jumpOverlay" class="overlay" hidden>
     <div class="jump-card" role="dialog" aria-label="Go to or search">
-      <div class="jump-title">Go to or search</div>
+      <div class="jump-title">Go to</div>
+      <div class="jump-pick">
+        <label class="pick-field pick-surah"><span class="pick-label">Surah</span><select id="pickSurah"></select></label>
+        <label class="pick-field pick-verse"><span class="pick-label">Verse</span><select id="pickVerse"></select></label>
+        <button id="pickGo" class="pick-go">Go</button>
+      </div>
+      <div class="jump-or">or search</div>
       <input id="jumpInput" type="search" placeholder="2:255, juz 30, or words…" autocomplete="off" spellcheck="false" aria-label="Verse, juz, or words to search">
       <div class="jump-hint">Surah:verse · a surah number · “juz 5” · or words from the English, transliteration or Arabic</div>
       <div id="jumpResults" class="jump-results" aria-live="polite"></div>

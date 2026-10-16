@@ -154,7 +154,15 @@ input { font-family: inherit; color: inherit; }
 .tb-title {
   flex: 1; min-width: 0;
   display: flex; align-items: baseline; justify-content: center; gap: 10px;
+  padding: 6px 8px;
+  border: none; background: transparent; color: inherit;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
+.tb-title:hover { background: var(--bg-soft); }
+.tb-caret { width: 14px; height: 14px; flex: none; align-self: center; margin-inline-start: -4px; color: var(--faint); }
+@media (max-width: 420px) { .tb-title { padding: 6px 2px; } .tb-caret { display: none; } }
 .tb-name {
   font-weight: 600; font-size: 0.95rem; letter-spacing: 0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -831,6 +839,51 @@ html[data-mode="verse"] .sh-names { margin-top: 0.3rem; font-size: 0.98rem; }
   font-size: 0.95rem; font-weight: 700;
   margin-bottom: 12px;
 }
+/* surah + verse pickers */
+.jump-pick { display: flex; align-items: flex-end; gap: 8px; }
+.pick-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pick-surah { flex: 1; }
+.pick-verse { flex: none; width: 5.2em; }
+.pick-label {
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--faint);
+}
+.pick-field select {
+  width: 100%;
+  padding: 11px 30px 11px 12px;
+  font: inherit; font-size: 0.95rem;
+  color: var(--text);
+  background: var(--bg-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m7 10 5 5 5-5' fill='none' stroke='%23a08a5a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center / 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  -webkit-appearance: none; appearance: none;
+  outline: none;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+.pick-field select:focus { border-color: var(--gold); }
+.pick-go {
+  flex: none;
+  padding: 11px 18px;
+  font-size: 0.95rem; font-weight: 700;
+  color: var(--surface);
+  background: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.pick-go:hover { filter: brightness(1.08); }
+.jump-or {
+  margin: 14px 0 8px;
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--faint);
+  display: flex; align-items: center; gap: 10px;
+}
+.jump-or::before, .jump-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
 #jumpInput {
   width: 100%;
   padding: 12px 14px;

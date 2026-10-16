@@ -940,8 +940,43 @@ function openJump(query = "") {
   $("#jumpOverlay").hidden = false;
   const input = $("#jumpInput");
   input.value = query;
-  input.focus();
+  fillPicker();
+  // on touch screens don't pop the keyboard; the pickers are the quick way in
+  if (query || !window.matchMedia("(pointer: coarse)").matches) input.focus();
   renderJumpResults();
+}
+
+// Surah + verse pickers: native selects, so phones show their own wheel/list.
+// They open on the verse you're reading.
+function fillPicker() {
+  const sel = $("#pickSurah");
+  if (!sel.options.length && app.chapters.length) {
+    for (let s = 1; s <= TOTAL; s++) {
+      const ch = app.chapters[s];
+      if (ch) sel.add(new Option(`${s}. ${ch.transliteration} · ${ch.name_english}`, String(s)));
+    }
+  }
+  const cur = currentVerse() || { s: settings.sura, a: 1 };
+  sel.value = String(cur.s);
+  fillVerses(cur.s, cur.a);
+}
+
+function fillVerses(s, a = 1) {
+  const sel = $("#pickVerse");
+  const n = app.chapters[s]?.verse_count || 1;
+  if (sel.options.length !== n) {
+    sel.innerHTML = "";
+    for (let i = 1; i <= n; i++) sel.add(new Option(String(i), String(i)));
+  }
+  sel.value = String(Math.min(Math.max(a, 1), n));
+}
+
+function submitPicker() {
+  const s = +$("#pickSurah").value;
+  const a = +$("#pickVerse").value || 1;
+  if (!app.chapters[s]) return;
+  closeJump();
+  goToVerse(s, a);
 }
 
 function closeJump() {
@@ -1280,6 +1315,12 @@ function bindEvents() {
     if (e.key === "Escape") closeJump();
   });
   $("#jumpInput").addEventListener("input", renderJumpResults);
+  $("#pickSurah").addEventListener("change", (e) => fillVerses(+e.target.value, 1));
+  $("#pickGo").addEventListener("click", submitPicker);
+  for (const id of ["#pickSurah", "#pickVerse"]) {
+    $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitPicker(); } });
+  }
+  $("#topbarTitle").addEventListener("click", () => openJump());
   $("#bookmarkBtn").addEventListener("click", () => {
     const cur = currentVerse();
     if (cur) toggleBookmark(cur.s, cur.a);
