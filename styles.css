@@ -1280,6 +1280,7 @@ body.hud-hidden .lum-btn { opacity: 0; }
 /* --- HUD + hint --- */
 #presentHud {
   position: fixed; right: 16px; bottom: 16px;
+  z-index: 65; /* above the stage (which reaches the bottom edge), below the settings panel */
   display: flex; gap: 8px; padding: 8px;
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   -webkit-backdrop-filter: blur(12px);

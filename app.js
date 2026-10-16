@@ -929,6 +929,7 @@ function bindEvents() {
   document.addEventListener("click", (e) => {
     if (!panel.hidden && !panel.contains(e.target) && !$("#settingsBtn").contains(e.target) && !e.target.closest("#presentHud")) {
       panel.hidden = true;
+      e.closedPanel = true; // a tap that only dismisses the panel shouldn't also step the verse
     }
   });
   $("#themeRow").addEventListener("click", (e) => {
@@ -1080,8 +1081,13 @@ function bindEvents() {
   });
   $("#presentExit").addEventListener("click", () => setPresent(false));
   document.addEventListener("click", (e) => {
-    if (!presenting) return;
+    if (!presenting || e.closedPanel) return;
     if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, button, a, input, select, .vb-foot")) return;
+    // Once faded, the HUD stops taking taps, so a tap aimed at its buttons
+    // lands on the stage. Treat that as "show the controls", not "next verse".
+    const hud = $("#presentHud").getBoundingClientRect();
+    if (e.clientX >= hud.left - 10 && e.clientX <= hud.right + 10 &&
+        e.clientY >= hud.top - 20 && e.clientY <= hud.bottom + 10) return;
     const dir = e.clientX < window.innerWidth * 0.28 ? -1 : 1;
     verseStep(dir);
     flashLumNav(dir);
