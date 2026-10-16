@@ -7,6 +7,20 @@
   <meta name="theme-color" content="#f6f0e2">
   <title>Qur'an Reader · Luminous</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M44 6A26 26 0 1 0 44 58 32 32 0 0 1 44 6Z' fill='%23a67c2e'/%3E%3Cpath d='m47 20 2.6 5.4 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9Z' fill='%23a67c2e'/%3E%3C/svg%3E">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Qur'an">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Qur'an Reader · Luminous">
+  <meta property="og:title" content="Qur'an Reader · Luminous">
+  <meta property="og:description" content="A quiet, beautiful reader for the Holy Qur'an — Arabic, transliteration, and English, one verse at a time.">
+  <meta property="og:url" content="https://quran-reader-live.web.app/">
+  <meta property="og:image" content="https://quran-reader-live.web.app/icons/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="القرآن الكريم — Qur'an Reader · Luminous">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -36,7 +50,10 @@
         <span id="tbArabic" class="tb-arabic" lang="ar" dir="rtl">…</span>
       </div>
       <div class="tb-actions">
-        <button id="jumpBtn" class="icon-btn" aria-label="Go to verse" title="Go to verse">
+        <button id="bookmarkBtn" class="icon-btn" aria-label="Save this verse" title="Save this verse (B)" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path class="bm-shape" d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="jumpBtn" class="icon-btn" aria-label="Go to or search" title="Go to verse, juz, saved, or search (G)">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M11 8v6M8 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
         <button id="settingsBtn" class="icon-btn" aria-label="Reader settings" title="Settings">
@@ -120,13 +137,16 @@
   </div>
 
   <div id="jumpOverlay" class="overlay" hidden>
-    <div class="jump-card" role="dialog" aria-label="Go to verse">
-      <div class="jump-title">Go to verse</div>
-      <input id="jumpInput" placeholder="e.g. 2:255" inputmode="numeric" autocomplete="off" aria-label="Surah and verse">
-      <div class="jump-hint">Surah:verse — or a surah number alone</div>
+    <div class="jump-card" role="dialog" aria-label="Go to or search">
+      <div class="jump-title">Go to or search</div>
+      <input id="jumpInput" type="search" placeholder="2:255, juz 30, or words…" autocomplete="off" spellcheck="false" aria-label="Verse, juz, or words to search">
+      <div class="jump-hint">Surah:verse · a surah number · “juz 5” · or words from the English, transliteration or Arabic</div>
+      <div id="jumpResults" class="jump-results" aria-live="polite"></div>
       <button id="jumpClose" class="jump-close">Close</button>
     </div>
   </div>
+
+  <div id="toast" role="status" aria-live="polite" hidden></div>
 
   <div id="presentHud" hidden>
     <button id="presentGear" class="ph-btn" aria-label="Reader settings" title="Settings">

@@ -63,11 +63,15 @@ function parseHash() {
 function setHash(sura, aya) {
   const want = aya ? `#${sura}/${aya}` : `#${sura}`;
   if (location.hash !== want) history.replaceState(null, "", want);
+  updateBookmarkBtn();
 }
 
 /* ============================== init ============================== */
 
 async function init() {
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
   applySettings();
   bindEvents();
   document.fonts?.ready.then(() => { if (settings.mode === "luminous") fitLuminous(); });
@@ -184,7 +188,7 @@ function renderSurah() {
 function renderVerses(container) {
   const list = el("div", "verses");
   for (const v of app.surah.verses) {
-    const art = el("article", "verse");
+    const art = el("article", "verse" + (isBookmarked(v.sura, v.aya) ? " saved" : ""));
     art.id = `v-${v.sura}-${v.aya}`;
 
     const arabic = el("div", "verse-arabic");
@@ -667,6 +671,15 @@ function renderChapterList() {
     empty.textContent = f ? "No surah matches that search." : "";
     listEl.appendChild(empty);
   }
+  if (f.length >= 2 && !/^\d+$/.test(f)) {
+    const more = el("button", "list-search-verses");
+    more.innerHTML = `Search verses for “<b>${escapeHtml(chapterFilter.trim())}</b>” ›`;
+    more.addEventListener("click", () => {
+      if (isMobile()) document.body.classList.remove("nav-open");
+      openJump(chapterFilter.trim());
+    });
+    listEl.appendChild(more);
+  }
 }
 
 function updateChapterActive() {
@@ -852,47 +865,87 @@ function toggleSidebar(forceOpen) {
   }
 }
 
-/* ============================== jump dialog ============================== */
+/* ============================== go to / search dialog ============================== */
 
-function openJump() {
+// First verse of each juz (standard 30-part division).
+const JUZ_STARTS = [
+  [1, 1], [2, 142], [2, 253], [3, 93], [4, 24], [4, 148], [5, 82], [6, 111], [7, 88], [8, 41],
+  [9, 93], [11, 6], [12, 53], [15, 1], [17, 1], [18, 75], [21, 1], [23, 1], [25, 21], [27, 56],
+  [29, 46], [33, 31], [36, 28], [39, 32], [41, 47], [46, 1], [51, 31], [58, 1], [67, 1], [78, 1],
+];
+
+function juzOf(s, a) {
+  let j = 1;
+  for (let i = 0; i < JUZ_STARTS.length; i++) {
+    const [js, ja] = JUZ_STARTS[i];
+    if (s > js || (s === js && a >= ja)) j = i + 1;
+    else break;
+  }
+  return j;
+}
+
+let jumpTimer = 0;
+
+function openJump(query = "") {
   $("#jumpOverlay").hidden = false;
   const input = $("#jumpInput");
-  input.value = "";
+  input.value = query;
   input.focus();
+  renderJumpResults();
 }
 
 function closeJump() {
   $("#jumpOverlay").hidden = true;
 }
 
+// What the dialog's text means: a reference, a juz, or words to search.
+function parseJumpQuery(raw) {
+  const q = raw.trim();
+  if (!q) return { kind: "empty" };
+  let m = q.match(/^(\d{1,3})\s*[:\-.\/ ]?\s*(\d{1,3})?$/);
+  if (m) {
+    const s = +m[1];
+    const a = m[2] ? +m[2] : null;
+    const ch = app.chapters[s];
+    if (!ch || (a && (a < 1 || a > ch.verse_count))) return { kind: "bad" };
+    return { kind: "ref", s, a };
+  }
+  m = q.match(/^(?:juz|jz|j|para|part)\s*'?\s*(\d{1,2})$/i);
+  if (m) {
+    const j = +m[1];
+    if (j < 1 || j > 30) return { kind: "bad" };
+    return { kind: "juz", j, s: JUZ_STARTS[j - 1][0], a: JUZ_STARTS[j - 1][1] };
+  }
+  return q.length >= 2 ? { kind: "search", q } : { kind: "short" };
+}
+
 function submitJump() {
-  const raw = $("#jumpInput").value.trim();
-  const m = raw.match(/^(\d{1,3})\s*[:\-]?\s*(\d{1,3})?$/);
-  if (!m) return jumpShake();
-  const s = +m[1];
-  const a = m[2] ? +m[2] : null;
-  const ch = app.chapters[s];
-  if (!ch || (a && (a < 1 || a > ch.verse_count))) return jumpShake();
-  closeJump();
-  if (s === settings.sura) {
-    if (a) {
-      if (settings.mode === "verse" || settings.mode === "luminous") {
-        settings.aya = a;
-        saveSettings();
-        renderCurrent();
-        return;
-      }
-      const target = document.getElementById(`v-${s}-${a}`);
-      if (target) {
-        target.scrollIntoView({ block: "center" });
-        target.classList.add("flash");
-        setTimeout(() => target.classList.remove("flash"), 1900);
-      }
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+  const p = parseJumpQuery($("#jumpInput").value);
+  if (p.kind === "ref" || p.kind === "juz") {
+    closeJump();
+    goToVerse(p.s, p.a);
+  } else if (p.kind === "search") {
+    const first = $("#jumpResults .jr-item");
+    if (first) first.click();
   } else {
-    openSurah(s, a);
+    jumpShake();
+  }
+}
+
+function goToVerse(s, a) {
+  if (s !== settings.sura || !app.surah) { openSurah(s, a); return; }
+  if (a && (settings.mode === "verse" || settings.mode === "luminous")) {
+    settings.aya = a;
+    saveSettings();
+    renderCurrent();
+    return;
+  }
+  if (!a) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  const target = document.getElementById(`v-${s}-${a}`);
+  if (target) {
+    target.scrollIntoView({ block: "center" });
+    target.classList.add("flash");
+    setTimeout(() => target.classList.remove("flash"), 1900);
   }
 }
 
@@ -901,6 +954,262 @@ function jumpShake() {
   card.classList.remove("shake");
   void card.offsetWidth; // restart animation
   card.classList.add("shake");
+}
+
+function jumpItem(s, a, label, snippetHtml) {
+  const btn = el("button", "jr-item");
+  const ch = app.chapters[s];
+  btn.innerHTML = `
+    <span class="jr-ref">${s}:${a}</span>
+    <span class="jr-body">
+      <span class="jr-name">${escapeHtml(label ?? (ch ? ch.transliteration : ""))}</span>
+      ${snippetHtml ? `<span class="jr-snip">${snippetHtml}</span>` : ""}
+    </span>`;
+  btn.addEventListener("click", () => { closeJump(); goToVerse(s, a); });
+  return btn;
+}
+
+function jumpSection(title) {
+  const sec = el("div", "jr-section");
+  const h = el("div", "jr-label");
+  h.textContent = title;
+  sec.appendChild(h);
+  return sec;
+}
+
+function renderJumpResults() {
+  clearTimeout(jumpTimer);
+  const box = $("#jumpResults");
+  const p = parseJumpQuery($("#jumpInput").value);
+  box.innerHTML = "";
+
+  if (p.kind === "ref") {
+    const ch = app.chapters[p.s];
+    box.appendChild(jumpItem(p.s, p.a ?? 1, `${ch.transliteration}${p.a ? "" : " · start of surah"}`, "Press Enter to open"));
+    return;
+  }
+  if (p.kind === "juz") {
+    box.appendChild(jumpItem(p.s, p.a, `Juz ${p.j}`, `Starts at ${app.chapters[p.s].transliteration} ${p.s}:${p.a}`));
+    return;
+  }
+  if (p.kind === "bad") {
+    const msg = el("div", "jr-empty");
+    msg.textContent = "No such surah, verse or juz.";
+    box.appendChild(msg);
+    return;
+  }
+  if (p.kind === "search") {
+    const msg = el("div", "jr-empty");
+    msg.textContent = "Searching…";
+    box.appendChild(msg);
+    jumpTimer = setTimeout(() => runSearch(p.q), 180);
+    return;
+  }
+
+  // empty: saved verses, then the juz grid
+  const saved = jumpSection("Saved verses");
+  const marks = loadBookmarks();
+  if (!marks.length) {
+    const msg = el("div", "jr-empty");
+    msg.textContent = "Nothing saved yet. Tap the bookmark at the top (or press B) to save the verse you're on.";
+    saved.appendChild(msg);
+  }
+  for (const b of marks) {
+    const row = jumpItem(b.s, b.a, null, b.en ? escapeHtml(trimText(b.en, 110)) : "");
+    const rm = el("span", "jr-remove");
+    rm.setAttribute("role", "button");
+    rm.setAttribute("aria-label", `Remove ${b.s}:${b.a} from saved`);
+    rm.title = "Remove";
+    rm.textContent = "×";
+    rm.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleBookmark(b.s, b.a, false);
+      renderJumpResults();
+    });
+    row.appendChild(rm);
+    saved.appendChild(row);
+  }
+  box.appendChild(saved);
+
+  const juz = jumpSection("Juz");
+  const grid = el("div", "jr-juz");
+  const cur = app.surah ? juzOf(settings.sura, settings.aya ?? 1) : 0;
+  JUZ_STARTS.forEach(([s, a], i) => {
+    const b = el("button", "jr-juz-btn" + (i + 1 === cur ? " active" : ""));
+    b.textContent = String(i + 1);
+    b.title = `Juz ${i + 1} · ${app.chapters[s]?.transliteration ?? ""} ${s}:${a}`;
+    b.addEventListener("click", () => { closeJump(); goToVerse(s, a); });
+    grid.appendChild(b);
+  });
+  juz.appendChild(grid);
+  box.appendChild(juz);
+}
+
+/* ---------- verse search ---------- */
+
+let allSurahs = null; // promise of [surah docs]
+
+function loadAllSurahs() {
+  if (!allSurahs) {
+    allSurahs = (async () => {
+      const out = new Array(TOTAL);
+      let next = 1;
+      const worker = async () => {
+        while (next <= TOTAL) {
+          const n = next++;
+          const res = await fetch(`data/surahs/${pad3(n)}.json`);
+          if (!res.ok) throw new Error(res.status);
+          out[n - 1] = await res.json();
+        }
+      };
+      await Promise.all(Array.from({ length: 8 }, worker));
+      return out;
+    })().catch((err) => { allSurahs = null; throw err; });
+  }
+  return allSurahs;
+}
+
+const fold = (t) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+const foldArabic = (t) => t
+  .replace(/[ؐ-ًؚ-ٰٟۖ-ۭـ]/g, "")
+  .replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه");
+const HAS_ARABIC = /[؀-ۿ]/;
+
+async function runSearch(q) {
+  const box = $("#jumpResults");
+  let docs;
+  try {
+    docs = await loadAllSurahs();
+  } catch {
+    box.innerHTML = `<div class="jr-empty">Couldn't load the verses to search. Check your connection.</div>`;
+    return;
+  }
+  if ($("#jumpInput").value.trim() !== q) return; // typed on meanwhile
+
+  const arabic = HAS_ARABIC.test(q);
+  const words = (arabic ? foldArabic(q) : fold(q)).split(/\s+/).filter(Boolean);
+  const hits = [];
+  for (const doc of docs) {
+    for (const v of doc.verses) {
+      if (arabic) {
+        const hay = foldArabic(v.arabic);
+        if (words.every((w) => hay.includes(w))) hits.push({ v, field: "en" });
+      } else {
+        const en = fold(v.english);
+        if (words.every((w) => en.includes(w))) { hits.push({ v, field: "en" }); continue; }
+        const tr = fold(v.transliteration_text || "");
+        if (words.every((w) => tr.includes(w))) hits.push({ v, field: "tr" });
+      }
+    }
+  }
+
+  box.innerHTML = "";
+  const sec = jumpSection(hits.length ? `${hits.length} verse${hits.length === 1 ? "" : "s"}${hits.length > 100 ? " · showing first 100" : ""}` : "No verses found");
+  for (const { v, field } of hits.slice(0, 100)) {
+    const text = field === "tr" ? (v.transliteration_text || "") : v.english;
+    sec.appendChild(jumpItem(v.sura, v.aya, null, highlight(text, arabic ? [] : words)));
+  }
+  box.appendChild(sec);
+}
+
+// Show the part of the verse around the first match with matches marked.
+function highlight(text, words) {
+  const folded = fold(text);
+  // fold() can change length for some characters; fall back to plain text then
+  if (folded.length !== text.length || !words.length) return escapeHtml(trimText(text, 160));
+  const first = Math.min(...words.map((w) => { const i = folded.indexOf(w); return i < 0 ? Infinity : i; }));
+  let from = 0, to = text.length;
+  if (text.length > 170 && Number.isFinite(first)) {
+    from = Math.max(0, first - 60);
+    to = Math.min(text.length, from + 170);
+    if (from > 0) from = text.lastIndexOf(" ", from) + 1 || from;
+  }
+  const marks = [];
+  for (const w of words) {
+    let i = folded.indexOf(w, from);
+    while (i >= 0 && i < to) { marks.push([i, i + w.length]); i = folded.indexOf(w, i + w.length); }
+  }
+  marks.sort((x, y) => x[0] - y[0]);
+  let out = from > 0 ? "…" : "", pos = from;
+  for (const [a, b] of marks) {
+    if (a < pos) continue;
+    out += escapeHtml(text.slice(pos, a)) + "<mark>" + escapeHtml(text.slice(a, Math.min(b, to))) + "</mark>";
+    pos = Math.min(b, to);
+  }
+  out += escapeHtml(text.slice(pos, to)) + (to < text.length ? "…" : "");
+  return out;
+}
+
+function trimText(t, n) {
+  return t.length > n ? t.slice(0, t.lastIndexOf(" ", n) > n * 0.6 ? t.lastIndexOf(" ", n) : n) + "…" : t;
+}
+
+/* ============================== bookmarks ============================== */
+
+const BOOKMARKS_KEY = "quran-reader.bookmarks.v1";
+
+function loadBookmarks() {
+  try {
+    const list = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || "[]");
+    return Array.isArray(list) ? list : [];
+  } catch { return []; }
+}
+
+function isBookmarked(s, a) {
+  return loadBookmarks().some((b) => b.s === s && b.a === a);
+}
+
+function toggleBookmark(s, a, force) {
+  let list = loadBookmarks();
+  const has = list.some((b) => b.s === s && b.a === a);
+  const want = force ?? !has;
+  if (want === has) return;
+  if (want) {
+    const v = app.surah?.chapter.sura === s ? app.surah.verses.find((x) => x.aya === a) : null;
+    list.unshift({ s, a, en: v ? v.english : "", t: Date.now() });
+  } else {
+    list = list.filter((b) => !(b.s === s && b.a === a));
+  }
+  try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list)); } catch { /* private mode */ }
+  document.getElementById(`v-${s}-${a}`)?.classList.toggle("saved", want);
+  updateBookmarkBtn();
+  showToast(want ? `Saved ${s}:${a}` : `Removed ${s}:${a} from saved`);
+}
+
+// The verse the bookmark button acts on: the one on screen in the verse
+// modes; in scroll mode, the first verse whose text is still in view.
+function currentVerse() {
+  if (!app.surah) return null;
+  const s = app.surah.chapter.sura;
+  if (settings.mode !== "scroll") return { s, a: settings.aya ?? 1 };
+  const top = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-h")) || 60) + 8;
+  for (const v of document.querySelectorAll(".verse")) {
+    if (v.getBoundingClientRect().bottom > top + 24) return { s, a: +v.id.split("-")[2] };
+  }
+  return { s, a: 1 };
+}
+
+function updateBookmarkBtn() {
+  const btn = $("#bookmarkBtn");
+  const cur = currentVerse();
+  const on = !!cur && isBookmarked(cur.s, cur.a);
+  btn.classList.toggle("active", on);
+  btn.setAttribute("aria-pressed", String(on));
+  const label = cur ? `${on ? "Remove" : "Save"} ${cur.s}:${cur.a}` : "Save this verse";
+  btn.setAttribute("aria-label", label);
+  btn.title = `${label} (B)`;
+}
+
+let toastTimer = 0;
+function showToast(text) {
+  const t = $("#toast");
+  t.textContent = text;
+  t.hidden = false;
+  t.classList.remove("show");
+  void t.offsetWidth;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 1900);
 }
 
 /* ============================== events ============================== */
@@ -914,11 +1223,16 @@ function bindEvents() {
     renderChapterList();
   });
 
-  $("#jumpBtn").addEventListener("click", openJump);
+  $("#jumpBtn").addEventListener("click", () => openJump());
   $("#jumpClose").addEventListener("click", closeJump);
   $("#jumpInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter") submitJump();
     if (e.key === "Escape") closeJump();
+  });
+  $("#jumpInput").addEventListener("input", renderJumpResults);
+  $("#bookmarkBtn").addEventListener("click", () => {
+    const cur = currentVerse();
+    if (cur) toggleBookmark(cur.s, cur.a);
   });
   $("#jumpOverlay").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeJump();
@@ -1008,11 +1322,13 @@ function bindEvents() {
   $("#nextBtn").addEventListener("click", () => openSurah(settings.sura + 1));
 
   // scroll progress
+  let bmFrame = 0;
   document.addEventListener("scroll", () => {
     if (document.documentElement.dataset.mode === "verse" || document.documentElement.dataset.mode === "luminous") return;
     const h = document.documentElement;
     const max = h.scrollHeight - h.clientHeight;
     $("#progressBar").style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+    if (!bmFrame) bmFrame = requestAnimationFrame(() => { bmFrame = 0; updateBookmarkBtn(); });
   }, { passive: true });
 
   // keyboard
@@ -1027,6 +1343,16 @@ function bindEvents() {
     if (target && target.matches("input, textarea, select")) return;
     if (!$("#jumpOverlay").hidden) return;
     if (e.key === "p" || e.key === "P") { setPresent(!presenting); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) { /* leave browser shortcuts alone */ }
+    else if (e.key === "b" || e.key === "B") {
+      const cur = currentVerse();
+      if (cur) toggleBookmark(cur.s, cur.a);
+      return;
+    } else if (e.key === "g" || e.key === "G") {
+      e.preventDefault();
+      openJump();
+      return;
+    }
     // a focused button already acts on Space/Enter natively — don't double-step
     if (target && target.matches("button") && (e.key === " " || e.key === "Enter")) return;
     const inVerse = document.documentElement.dataset.mode === "verse" || document.documentElement.dataset.mode === "luminous";

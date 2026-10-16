@@ -64,3 +64,19 @@ Current hosting URL:
 This static site is also tracked in GitHub:
 
 - [https://github.com/lotetreel/quran-reader-luminous](https://github.com/lotetreel/quran-reader-luminous)
+
+## Go to, search, saved verses, juz
+
+The magnifier in the top bar (or `G`) opens one box for everything:
+type `2:255`, a surah number, `juz 30`, or words to search the English,
+transliteration or Arabic (diacritics are ignored). With the box empty it
+lists your saved verses and a 1–30 juz grid. The bookmark button (or `B`)
+saves the verse you're on; saved verses live in this browser only.
+
+## Offline / install
+
+`sw.js` caches the app, fonts and every surah after the first visit, so the
+reader works with no connection and can be installed from the browser
+menu ("Install app" / "Add to Home Screen"). Page, script and styles are
+network-first, so a deploy shows on the next load; bump `VERSION` in
+`sw.js` if surah data or fonts ever change.
