@@ -766,7 +766,6 @@ function setPresent(on) {
   presenting = on;
   document.body.classList.toggle("present", on);
   $("#presentHud").hidden = !on;
-  $("#presentHint").hidden = !on;
   $("#presentToggle").checked = on;
   if (on) {
     if (settings.mode === "scroll") {

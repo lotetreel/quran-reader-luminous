@@ -1294,7 +1294,7 @@ body.hud-hidden .lum-btn { opacity: 0; }
   #presentHud { left: 50%; right: auto; bottom: 18px; width: max-content; translate: -50% 0; }
 }
 
-/* --- HUD + hint --- */
+/* --- HUD --- */
 #presentHud {
   position: fixed; right: 16px; bottom: 16px;
   z-index: 65; /* above the stage (which reaches the bottom edge), below the settings panel */
@@ -1318,22 +1318,5 @@ body.hud-hidden .lum-btn { opacity: 0; }
 }
 .ph-btn:hover { border-color: var(--gold); color: var(--gold); }
 .ph-btn .icon { width: 20px; height: 20px; }
-#presentHint {
-  position: fixed; left: 50%; bottom: 20px;
-  transform: translateX(-50%);
-  z-index: 74;
-  pointer-events: none;
-  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;
-  color: var(--muted);
-  background: color-mix(in srgb, var(--surface) 62%, transparent);
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 999px;
-  transition: opacity 0.55s ease;
-}
 body.hud-hidden #presentHud { opacity: 0; pointer-events: none; transform: translateY(10px); }
-body.hud-hidden #presentHint { opacity: 0; }
-@media (max-width: 640px) {
-  #presentHint { display: none; }
-}
 body.hud-hidden, body.hud-hidden * { cursor: none; }
