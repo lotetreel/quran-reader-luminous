@@ -65,6 +65,14 @@ This static site is also tracked in GitHub:
 
 - [https://github.com/lotetreel/quran-reader-luminous](https://github.com/lotetreel/quran-reader-luminous)
 
+## Landing page
+
+A bare visit to the site (no `#surah/verse`) opens on a landing page with
+Continue reading, a surah picker, popular surahs, a verse of the day and an
+Install button where the browser supports it. Deep links and the installed
+app (`start_url` is `/#continue`) skip it and go straight to reading; the
+title at the top of the chapter list brings it back.
+
 ## Go to, search, saved verses, juz
 
 The magnifier in the top bar (or `G`, or tapping the surah name) opens one

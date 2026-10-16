@@ -3,7 +3,7 @@
   "short_name": "Qur'an",
   "description": "A quiet, beautiful reader for the Holy Qur'an — Arabic, transliteration, and English.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/#continue",
   "scope": "/",
   "display": "standalone",
   "background_color": "#14110d",

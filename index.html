@@ -28,10 +28,10 @@
   <div id="progressBar" aria-hidden="true"></div>
 
   <aside id="sidebar" aria-label="Chapters">
-    <div class="sidebar-head">
-      <div class="brand-arabic" lang="ar" dir="rtl">القرآن الكريم</div>
-      <div class="brand-sub">Qur'an Reader · Luminous</div>
-    </div>
+    <button id="brandHome" class="sidebar-head" title="Home">
+      <span class="brand-arabic" lang="ar" dir="rtl">القرآن الكريم</span>
+      <span class="brand-sub">Qur'an Reader · Luminous</span>
+    </button>
     <div class="search-row">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       <input id="chapterSearch" type="search" placeholder="Search surah…" autocomplete="off" aria-label="Search surah">
@@ -160,6 +160,68 @@
       <button id="jumpClose" class="jump-close">Close</button>
     </div>
   </div>
+
+  <section id="landing" hidden aria-label="Welcome">
+    <div class="ld-bg" aria-hidden="true"></div>
+    <div class="ld-inner">
+      <header class="ld-hero">
+        <svg class="ld-logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ldLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2d58b"/><stop offset="1" stop-color="#b8862a"/></linearGradient></defs><path d="M44 6A26 26 0 1 0 44 58 32 32 0 0 1 44 6Z" fill="url(#ldLogoGrad)"/><path d="m47 20 2.6 5.4 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9Z" fill="url(#ldLogoGrad)"/></svg>
+        <h1 class="ld-title" lang="ar" dir="rtl">القرآن الكريم</h1>
+        <div class="ld-sub">Qur'an Reader · Luminous</div>
+        <p class="ld-tag">A quiet place to read the Holy Qur'an — Arabic, transliteration and English, one verse at a time.</p>
+        <div class="ld-ctas">
+          <button id="ldContinue" class="ld-btn ld-primary"><span class="ld-btn-main">Begin reading</span><span class="ld-btn-sub" id="ldContinueSub">Al-Fatihah · 1:1</span></button>
+          <button id="ldChoose" class="ld-btn ld-secondary">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Choose a surah or search
+          </button>
+        </div>
+        <nav class="ld-quick" aria-label="Popular">
+          <button data-go="1:1">Al-Fatihah</button>
+          <button data-go="2:255">Ayat al-Kursi</button>
+          <button data-go="18:1">Al-Kahf</button>
+          <button data-go="36:1">Ya-Sin</button>
+          <button data-go="55:1">Ar-Rahman</button>
+          <button data-go="56:1">Al-Waqi'ah</button>
+          <button data-go="67:1">Al-Mulk</button>
+        </nav>
+      </header>
+
+      <section class="ld-votd" id="ldVotd" hidden aria-label="Verse of the day">
+        <div class="ld-label">Verse of the day</div>
+        <div class="ld-votd-ar" id="ldVotdAr" lang="ar" dir="rtl"></div>
+        <p class="ld-votd-en" id="ldVotdEn"></p>
+        <button class="ld-votd-ref" id="ldVotdRef"></button>
+      </section>
+
+      <section class="ld-features" aria-label="Features">
+        <div class="ld-feat">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+          <h2>Luminous</h2><p>One verse fills the screen, the Arabic revealed word by word with the meaning beneath.</p>
+        </div>
+        <div class="ld-feat">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 16.5V20M8 20h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <h2>Present</h2><p>Fill a projector or TV for the masjid or a gathering. Press P, then Space for each verse.</p>
+        </div>
+        <div class="ld-feat">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8H7Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9.5 13.5 2 2 3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h2>Offline</h2><p>After one visit every surah is saved on your device. Install it like an app.</p>
+        </div>
+        <div class="ld-feat">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <h2>Search &amp; save</h2><p>Find any word in Arabic or English, jump by juz, and keep the verses you return to.</p>
+        </div>
+      </section>
+
+      <footer class="ld-foot">
+        <button id="ldInstall" class="ld-install" hidden>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Install app
+        </button>
+        <span class="ld-orn" aria-hidden="true">۞</span>
+      </footer>
+    </div>
+  </section>
 
   <div id="toast" role="status" aria-live="polite" hidden></div>
 

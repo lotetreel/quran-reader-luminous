@@ -203,7 +203,14 @@ body.nav-open #sidebar { transform: none; }
 body.nav-open #backdrop { opacity: 1; }
 @media (min-width: 900px) { #backdrop { display: none; } }
 
-.sidebar-head { padding: 20px 20px 12px; }
+.sidebar-head {
+  display: block; width: 100%;
+  padding: 20px 20px 12px;
+  border: none; background: transparent; color: inherit;
+  text-align: start; cursor: pointer;
+}
+.sidebar-head:hover .brand-sub { color: var(--gold); }
+.brand-arabic, .brand-sub { display: block; }
 .brand-arabic {
   font-family: var(--font-arabic);
   font-size: 2rem; line-height: 1.4;
@@ -1544,3 +1551,202 @@ body.hud-hidden .lum-btn { opacity: 0; }
 .ph-btn .icon { width: 20px; height: 20px; }
 body.hud-hidden #presentHud { opacity: 0; pointer-events: none; transform: translateY(10px); }
 body.hud-hidden, body.hud-hidden * { cursor: none; }
+
+/* ============================================================
+   Landing page — shown for a bare visit to the site (no #verse),
+   and from the brand at the top of the chapter list. It sits over
+   the reader, which loads underneath so "Continue" is instant.
+   ============================================================ */
+body.landing-open { overflow: hidden; }
+#landing {
+  position: fixed; inset: 0;
+  z-index: 70;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(180deg, var(--lum-bg-a, var(--bg)), var(--lum-bg-b, var(--bg-soft)));
+  color: var(--text);
+}
+#landing[hidden] { display: none; }
+.ld-bg { position: fixed; inset: 0; pointer-events: none; }
+.ld-bg::before { /* breathing halo */
+  content: ""; position: absolute; inset: -20%;
+  background: radial-gradient(34% 30% at 50% 28%, color-mix(in srgb, var(--lum-glow, var(--gold)) 30%, transparent), transparent 72%);
+  filter: blur(40px);
+  animation: lumBreathe 9s ease-in-out infinite;
+}
+.ld-bg::after { /* star lattice, clear in the middle */
+  content: ""; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='84' height='84'><g fill='none' stroke='%23b08a3a' stroke-width='1'><polygon points='42,12.3 50.7,21 63,21 63,33.3 71.7,42 63,50.7 63,63 50.7,63 42,71.7 33.3,63 21,63 21,50.7 12.3,42 21,33.3 21,21 33.3,21'/><polygon points='0,-29.7 8.7,-21 21,-21 21,-8.7 29.7,0 21,8.7 21,21 8.7,21 0,29.7 -8.7,21 -21,21 -21,8.7 -29.7,0 -21,-8.7 -21,-21 -8.7,-21'/><polygon points='84,-29.7 92.7,-21 105,-21 105,-8.7 113.7,0 105,8.7 105,21 92.7,21 84,29.7 75.3,21 63,21 63,8.7 54.3,0 63,-8.7 63,-21 75.3,-21'/><polygon points='0,54.3 8.7,63 21,63 21,75.3 29.7,84 21,92.7 21,105 8.7,105 0,113.7 -8.7,105 -21,105 -21,92.7 -29.7,84 -21,75.3 -21,63 -8.7,63'/><polygon points='84,54.3 92.7,63 105,63 105,75.3 113.7,84 105,92.7 105,105 92.7,105 84,113.7 75.3,105 63,105 63,92.7 54.3,84 63,75.3 63,63 75.3,63'/><circle cx='42' cy='42' r='5'/></g></svg>");
+  opacity: 0.2;
+  -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 30%, transparent 35%, #000 90%);
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 30%, transparent 35%, #000 90%);
+}
+html[data-theme="night"] .ld-bg::after { opacity: 0.14; }
+
+.ld-inner {
+  position: relative;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: clamp(36px, 9vh, 96px) 20px 40px;
+}
+.ld-hero { text-align: center; animation: fadeUp 0.6s ease both; }
+.ld-logo {
+  width: 54px; height: 54px;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--lum-glow, var(--gold)) 55%, transparent));
+}
+.ld-title {
+  margin: 4px 0 0;
+  font-family: "Scheherazade New", "Amiri", serif;
+  font-weight: 400;
+  font-size: clamp(3.4rem, 12vw, 6.4rem);
+  line-height: 1.35;
+  color: var(--gold);
+  text-shadow: 0 0 40px color-mix(in srgb, var(--lum-glow, var(--gold)) 30%, transparent);
+}
+.ld-sub {
+  margin-top: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--muted);
+}
+.ld-tag {
+  max-width: 34rem;
+  margin: 18px auto 0;
+  font-family: var(--font-body);
+  font-size: clamp(1.02rem, 2.6vw, 1.2rem);
+  line-height: 1.65;
+  color: var(--text); opacity: 0.86;
+}
+.ld-ctas {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+  margin-top: 30px;
+}
+.ld-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 56px;
+  padding: 10px 26px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.ld-btn:active { transform: scale(0.97); }
+.ld-primary {
+  flex-direction: column; gap: 1px;
+  min-width: min(300px, 100%);
+  border: 1px solid var(--gold);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 88%, #fff), var(--gold));
+  color: #fffdf6;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--gold) 35%, transparent);
+}
+html[data-theme="night"] .ld-primary { color: #1a140b; }
+.ld-primary:hover { filter: brightness(1.06); }
+.ld-btn-main { font-size: 1.05rem; font-weight: 700; }
+.ld-btn-sub { font-size: 0.8rem; font-weight: 600; opacity: 0.85; }
+.ld-secondary {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text);
+  font-size: 0.95rem; font-weight: 600;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.ld-secondary:hover { border-color: var(--gold); color: var(--gold); }
+.ld-secondary .icon { width: 18px; height: 18px; }
+.ld-quick {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  max-width: 760px;
+  margin: 22px auto 0;
+}
+.ld-quick button {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.84rem; font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.ld-quick button:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
+
+.ld-label {
+  font-family: var(--font-ui);
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold);
+}
+.ld-votd {
+  position: relative;
+  max-width: 720px;
+  margin: clamp(44px, 8vh, 72px) auto 0;
+  padding: 28px clamp(20px, 5vw, 44px) 24px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  animation: fadeUp 0.6s ease 0.15s both;
+}
+.ld-votd-ar {
+  margin-top: 14px;
+  font-family: var(--font-arabic);
+  font-size: clamp(1.7rem, 5vw, 2.3rem);
+  line-height: 1.9;
+}
+.ld-votd-en {
+  margin: 10px auto 0;
+  max-width: 36rem;
+  font-family: var(--font-body);
+  font-size: 1.04rem; line-height: 1.7;
+  color: var(--text); opacity: 0.88;
+}
+.ld-votd-ref {
+  margin-top: 14px;
+  padding: 6px 12px;
+  border: none; background: transparent;
+  color: var(--gold);
+  font-size: 0.86rem; font-weight: 600;
+  cursor: pointer; border-radius: 8px;
+}
+.ld-votd-ref:hover { background: var(--gold-soft); }
+
+.ld-features {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: clamp(28px, 6vh, 52px);
+  animation: fadeUp 0.6s ease 0.3s both;
+}
+@media (max-width: 860px) { .ld-features { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .ld-features { grid-template-columns: 1fr; } }
+.ld-feat {
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+.ld-feat .icon { width: 22px; height: 22px; color: var(--gold); }
+.ld-feat h2 {
+  margin: 10px 0 4px;
+  font-family: var(--font-ui);
+  font-size: 0.98rem; font-weight: 700;
+}
+.ld-feat p { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--muted); }
+
+.ld-foot {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  margin-top: 34px;
+}
+.ld-install {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--gold); border-radius: 999px;
+  background: transparent; color: var(--gold);
+  font-size: 0.9rem; font-weight: 700; cursor: pointer;
+}
+.ld-install[hidden] { display: none; }
+.ld-install:hover { background: var(--gold-soft); }
+.ld-install .icon { width: 18px; height: 18px; }
+.ld-orn { color: var(--gold); opacity: 0.6; font-size: 1.1rem; letter-spacing: 0.6em; }

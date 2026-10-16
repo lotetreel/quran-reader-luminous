@@ -39,7 +39,9 @@ const defaults = {
 };
 
 let settings = { ...defaults };
+let returning = false; // has this browser read here before?
 try {
+  returning = !!localStorage.getItem(SETTINGS_KEY);
   const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
   for (const k of Object.keys(defaults)) if (k in saved) settings[k] = saved[k];
 } catch { /* first visit */ }
@@ -65,6 +67,7 @@ function parseHash() {
 }
 
 function setHash(sura, aya) {
+  if (landingOpen) { updateBookmarkBtn(); return; } // keep the bare address while the landing page shows
   const want = aya ? `#${sura}/${aya}` : `#${sura}`;
   if (location.hash !== want) history.replaceState(null, "", want);
   updateBookmarkBtn();
@@ -98,6 +101,9 @@ async function init() {
   }
   renderChapterList();
   const deep = parseHash();
+  // a bare visit to the site opens on the landing page; deep links (#2/255)
+  // and the installed app (#continue) go straight to reading
+  if (!location.hash) showLanding();
   openSurah(deep ? deep.s : settings.sura, deep ? deep.a : settings.aya);
 }
 
@@ -1297,6 +1303,80 @@ function showToast(text) {
   toastTimer = setTimeout(() => { t.hidden = true; }, 1900);
 }
 
+/* ============================== landing page ============================== */
+
+let landingOpen = false;
+let installPrompt = null;
+
+// Short, well-known verses for "Verse of the day" (one per calendar day).
+const DAILY_VERSES = [
+  "2:152", "2:153", "2:186", "3:8", "3:139", "3:173", "6:162", "7:56", "9:51", "13:28",
+  "14:7", "16:97", "17:80", "18:10", "20:25", "20:114", "21:87", "23:118", "25:63", "28:24",
+  "29:69", "33:41", "39:53", "40:60", "42:19", "49:13", "51:56", "55:13", "57:4", "59:22",
+  "64:11", "65:3", "67:2", "93:5", "94:5", "94:6", "103:1", "112:1",
+];
+
+function showLanding() {
+  landingOpen = true;
+  document.body.classList.add("landing-open");
+  document.body.classList.remove("nav-open");
+  $("#landing").hidden = false;
+  $("#landing").scrollTop = 0;
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  updateLanding();
+  renderVerseOfDay();
+}
+
+function hideLanding() {
+  if (!landingOpen) return;
+  landingOpen = false;
+  document.body.classList.remove("landing-open");
+  $("#landing").hidden = true;
+  if (app.surah) setHash(settings.sura, settings.mode === "scroll" ? null : settings.aya);
+}
+
+function updateLanding() {
+  const ch = app.chapters[settings.sura];
+  const main = $("#ldContinue .ld-btn-main");
+  const sub = $("#ldContinueSub");
+  if (returning && ch) {
+    const a = settings.aya ?? 1;
+    main.textContent = "Continue reading";
+    sub.textContent = `${ch.transliteration} · ${ch.sura}:${a}`;
+  } else {
+    main.textContent = "Begin reading";
+    sub.textContent = "Al-Fatihah · 1:1";
+  }
+  $("#ldInstall").hidden = !installPrompt;
+}
+
+async function renderVerseOfDay() {
+  const box = $("#ldVotd");
+  const day = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+  const [s, a] = DAILY_VERSES[day % DAILY_VERSES.length].split(":").map(Number);
+  if (box.dataset.ref === `${s}:${a}`) return;
+  try {
+    const doc = await (await fetch(`data/surahs/${pad3(s)}.json`)).json();
+    const v = doc.verses.find((x) => x.aya === a);
+    if (!v) return;
+    const ar = $("#ldVotdAr");
+    ar.textContent = v.arabic + "\u00A0";
+    const end = el("span", "ayah-end");
+    end.textContent = ayahMark(a);
+    ar.appendChild(end);
+    $("#ldVotdEn").textContent = v.english;
+    $("#ldVotdRef").textContent = `${doc.chapter.transliteration} ${s}:${a} · Read in context ›`;
+    $("#ldVotdRef").onclick = () => enterReader(s, a);
+    box.dataset.ref = `${s}:${a}`;
+    box.hidden = false;
+  } catch { /* offline before first visit: just leave it out */ }
+}
+
+function enterReader(s, a) {
+  hideLanding();
+  if (s) goToVerse(s, a);
+}
+
 /* ============================== events ============================== */
 
 function bindEvents() {
@@ -1321,6 +1401,32 @@ function bindEvents() {
     $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitPicker(); } });
   }
   $("#topbarTitle").addEventListener("click", () => openJump());
+
+  // landing page
+  $("#brandHome").addEventListener("click", showLanding);
+  $("#ldContinue").addEventListener("click", () => {
+    if (returning) enterReader();
+    else enterReader(1, 1);
+  });
+  $("#ldChoose").addEventListener("click", () => { hideLanding(); openJump(); });
+  $(".ld-quick").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-go]");
+    if (!b) return;
+    const [s, a] = b.dataset.go.split(":").map(Number);
+    enterReader(s, a);
+  });
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    $("#ldInstall").hidden = false;
+  });
+  $("#ldInstall").addEventListener("click", async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice.catch(() => {});
+    installPrompt = null;
+    $("#ldInstall").hidden = true;
+  });
   $("#bookmarkBtn").addEventListener("click", () => {
     const cur = currentVerse();
     if (cur) toggleBookmark(cur.s, cur.a);
@@ -1440,6 +1546,11 @@ function bindEvents() {
     const target = e.target instanceof Element ? e.target : null;
     if (target && target.matches("input, textarea, select")) return;
     if (!$("#jumpOverlay").hidden) return;
+    if (landingOpen) {
+      if (e.key === "Enter" && !(target && target.matches("button"))) $("#ldContinue").click();
+      else if (e.key === "g" || e.key === "G" || e.key === "/") { e.preventDefault(); $("#ldChoose").click(); }
+      return;
+    }
     if (e.key === "p" || e.key === "P") { setPresent(!presenting); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) { /* leave browser shortcuts alone */ }
     else if (e.key === "b" || e.key === "B") {
@@ -1544,6 +1655,7 @@ function bindEvents() {
   // external hash edits (typing a deep link, another tab) navigate the reader
   window.addEventListener("hashchange", () => {
     const h = parseHash();
+    if (h && landingOpen) hideLanding();
     if (!h || app.loading) return;
     if (h.s === settings.sura) {
       if (settings.mode !== "scroll" && (h.a ?? settings.aya) !== settings.aya) {
