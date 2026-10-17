@@ -32,6 +32,11 @@
       <span class="brand-arabic" lang="ar" dir="rtl">القرآن الكريم</span>
       <span class="brand-sub">Qur'an Reader · Luminous</span>
     </button>
+    <button id="sideNarr" class="side-narr">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6.5c-3 1.1-4.8 3.4-4.8 6.6v4.4h5.1v-5.1H7.7c.1-1.9 1.1-3.3 3-4.1zm8.8 0c-3 1.1-4.8 3.4-4.8 6.6v4.4h5.1v-5.1h-2.6c.1-1.9 1.1-3.3 3-4.1z" fill="currentColor"/></svg>
+      <span class="side-narr-text"><span class="side-narr-main">On the Qur'an</span><span class="side-narr-sub">Narrations from the Prophet and his Household</span></span>
+      <span class="side-narr-chev" aria-hidden="true">›</span>
+    </button>
     <div class="search-row">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       <input id="chapterSearch" type="search" placeholder="Search surah…" autocomplete="off" aria-label="Search surah">
@@ -51,6 +56,10 @@
         <svg class="tb-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="tb-actions">
+        <button id="hadithBtn" class="icon-btn" aria-label="Narrations on this verse" title="Narrations on this verse (N)" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6.5c-3 1.1-4.8 3.4-4.8 6.6v4.4h5.1v-5.1H7.7c.1-1.9 1.1-3.3 3-4.1zm8.8 0c-3 1.1-4.8 3.4-4.8 6.6v4.4h5.1v-5.1h-2.6c.1-1.9 1.1-3.3 3-4.1z" fill="currentColor"/></svg>
+          <span class="hb-count" id="hadithBtnCount" hidden></span>
+        </button>
         <button id="bookmarkBtn" class="icon-btn" aria-label="Save this verse" title="Save this verse (B)" aria-pressed="false">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path class="bm-shape" d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
         </button>
@@ -143,6 +152,12 @@
       <label class="switch-row"><span>Transliteration</span><input type="checkbox" id="translitToggle"></label>
       <label class="switch-row"><span>English</span><input type="checkbox" id="englishToggle"></label>
     </div>
+    <div class="panel-section">
+      <div class="panel-label">Narrations</div>
+      <label class="switch-row"><span>Narrations on verses</span><input type="checkbox" id="hadithToggle"></label>
+      <label class="switch-row"><span>Narration at end of surah</span><input type="checkbox" id="narrToggle"></label>
+      <div class="panel-hint">From Tafsir Ahl al-Bayt. Press N, or the quotation mark at the top, to read them beside the verse.</div>
+    </div>
   </div>
 
   <div id="jumpOverlay" class="overlay" hidden>
@@ -194,6 +209,14 @@
         <button class="ld-votd-ref" id="ldVotdRef"></button>
       </section>
 
+      <section class="ld-hotd" id="ldHotd" hidden aria-label="Narration of the day">
+        <div class="ld-label">On the Qur'an · narration of the day</div>
+        <div class="ld-hotd-ar" id="ldHotdAr" lang="ar" dir="rtl"></div>
+        <p class="ld-hotd-en" id="ldHotdEn"></p>
+        <div class="ld-hotd-by" id="ldHotdBy"></div>
+        <button class="ld-votd-ref" id="ldHotdMore">All narrations on the Qur'an ›</button>
+      </section>
+
       <section class="ld-features" aria-label="Features">
         <div class="ld-feat">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
@@ -220,6 +243,59 @@
         </button>
         <span class="ld-orn" aria-hidden="true">۞</span>
       </footer>
+    </div>
+  </section>
+
+  <aside id="hadithPanel" hidden aria-labelledby="hpRef">
+    <div class="hp-grip" aria-hidden="true"></div>
+    <header class="hp-head">
+      <div class="hp-top">
+        <button id="hpPrev" class="hp-step" aria-label="Previous verse" title="Previous verse">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="hp-where">
+          <div class="hp-kicker">Narrations</div>
+          <div class="hp-ref" id="hpRef"></div>
+        </div>
+        <button id="hpNext" class="hp-step" aria-label="Next verse" title="Next verse">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="hpClose" class="hp-x" aria-label="Close narrations" title="Close (N)">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <p class="hp-verse" id="hpVerse"></p>
+      <div class="hp-tools">
+        <div class="hp-langs" id="hpLangs" role="group" aria-label="Languages shown">
+          <button data-lang="ar" lang="ar">العربية</button>
+          <button data-lang="en">English</button>
+          <button data-lang="fa" lang="fa">فارسی</button>
+        </div>
+        <div class="hp-filter" id="hpFilter" role="group" aria-label="Narrated by"></div>
+      </div>
+    </header>
+    <div class="hp-body" id="hpBody" tabindex="-1"></div>
+  </aside>
+  <div id="hpBackdrop" hidden></div>
+
+  <section id="narrRoom" hidden aria-labelledby="nrTitle">
+    <div class="ld-bg" aria-hidden="true"></div>
+    <header class="nr-bar">
+      <button id="nrBack" class="nr-back" title="Back to reading (Esc)">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Back</span>
+      </button>
+      <span class="nr-bar-title">On the Qur'an</span>
+    </header>
+    <div class="nr-inner">
+      <header class="nr-hero">
+        <div class="ld-label">In the words of the Prophet and his Household</div>
+        <h1 id="nrTitle" class="nr-title" lang="ar" dir="rtl">القرآن</h1>
+        <p class="nr-intro">What the Prophet and the Imams of his Household said about the Qur'an: holding to it, learning and teaching it, carrying it in memory, reciting it well, listening to it, and approaching its meaning with care.</p>
+        <nav class="nr-index" id="nrIndex" aria-label="Topics"></nav>
+      </header>
+      <div id="nrSections"></div>
+      <footer class="nr-source" id="nrSource"></footer>
     </div>
   </section>
 

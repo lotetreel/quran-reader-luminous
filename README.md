@@ -82,6 +82,64 @@ transliteration or Arabic (diacritics are ignored). With the box empty it
 lists your saved verses and a 1–30 juz grid. The bookmark button (or `B`)
 saves the verse you're on; saved verses live in this browser only.
 
+## Narrations on each verse (Tafsir Ahl al-Bayt)
+
+25,000 narrations on 4,600 verses, from *Tafsir Ahl al-Bayt*, each in the
+Arabic original with Persian and English translations, its book reference
+and its sources.
+
+The Qur'an stays first: a verse only carries a faint count (in Scroll mode at
+the verse's end corner; in Luminous and Verse-by-verse beside the verse
+number; and on the quotation-mark button in the top bar). Press **N** or tap
+one to open the narrations panel:
+
+- docked beside the reading on wide screens (≥1200px), sliding over it on
+  tablets, rising as a sheet on phones
+- it follows you: step to the next verse and it shows that verse's narrations
+  (its own ‹ › arrows do the same, and move the reader with it)
+- **العربية / English / فارسی** switches choose which languages show; at
+  least one stays on, and the choice is remembered
+- narrations about the surah as a whole (its virtues, the merit of reciting
+  it) come first on verse 1
+- the Prophet and his Household come before commentators (al-Qummi) and
+  companions (Ibn Abbas), who are labelled; with many narrations a row of
+  speakers filters them
+- long narrations fold with "Continue reading"; Sources lists the hadith
+  collections; Share / Copy on each; verse references like (73:4) are links
+
+"Narrations on verses" in settings hides all of it for plain reading;
+presentation mode never shows it. A wide screen remembers the panel open.
+
+The data is `data/tafsir/` — `index.json` (counts per verse and chunk
+starts) and each surah in ~350 KB chunks (`002-1.json` …) so the panel
+opens quickly; they're cached for offline use as they're read. It's built
+from the tafsir reader's surah files
+(github.com/lotetreel/tafsir-ahlul-bayt-reader, `data/surahs`) by
+`python3 tools/build-tafsir.py path/to/data/surahs`, which joins the many
+spellings of each speaker, repairs the Arabic encoding of ة, and splits out
+the book reference and sources.
+
+## Narrations on the Qur'an
+
+The chapter "The Qur'an" (ch. 327) of *Mizan al-Hikmah* — 54 narrations
+from the Prophet and the Imams in 11 topics, Arabic and English — is woven
+into the reader:
+
+- in Scroll mode each surah ends with a narration on reciting the Qur'an
+- the landing page shows a narration of the day
+- search also finds narrations
+- **On the Qur'an** in the chapter list (or `#on-quran`, `#on-quran/5187`)
+  opens all of them on one page, with Share / Copy on each, and links to
+  the verses each one quotes or explains
+
+"Narration at end of surah" in settings turns the closing narration off.
+
+The data is `data/narrations/quran.json`, built from the Mizan al-Hikmah
+JSON (github.com/lotetreel/mizan-al-hikmah, `public/data`) by
+`python3 tools/build-narrations.py path/to/mizan_al_hikmah_vol4.json`. The
+script fixes scan artefacts and holds the curated verse links, the
+end-of-surah pool and the narration-of-the-day pool.
+
 ## Offline / install
 
 `sw.js` caches the app, fonts and every surah after the first visit, so the

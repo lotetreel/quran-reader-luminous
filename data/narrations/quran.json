@@ -1,0 +1,645 @@
+{
+ "title": "The Qur'an",
+ "title_ar": "القرآن",
+ "source": {
+  "book": "Mizan al-Hikmah",
+  "author": "Muhammad Muhammadi Rayshahri",
+  "volume": 4,
+  "chapter": 327
+ },
+ "end_of_surah": [
+  5178,
+  5179,
+  5180,
+  5181,
+  5182,
+  5199,
+  5198,
+  5162,
+  5163,
+  5191,
+  5165,
+  5164,
+  5161,
+  5159,
+  5172,
+  5196,
+  5186,
+  5183,
+  5190,
+  5153
+ ],
+ "daily": [
+  5152,
+  5153,
+  5154,
+  5156,
+  5158,
+  5159,
+  5161,
+  5162,
+  5163,
+  5164,
+  5165,
+  5168,
+  5170,
+  5172,
+  5173,
+  5176,
+  5178,
+  5179,
+  5180,
+  5181,
+  5182,
+  5183,
+  5184,
+  5186,
+  5191,
+  5196,
+  5198,
+  5199,
+  5150,
+  5160,
+  5167,
+  5174,
+  5175,
+  5185,
+  5190
+ ],
+ "sections": [
+  {
+   "n": 1509,
+   "title": "Adhere to the Qur'an",
+   "title_ar": "عَلَيكُم بِالقُرآنِ",
+   "items": [
+    {
+     "n": 5150,
+     "by": "The Prophet (SAWA)",
+     "en": "When matters become obscure for you like the darkness of the night, then turn to the Quran, for it is the mediating intercessor and the trustworthy deviser. Whoever puts it in front of them, it will lead them to Heaven, and whoever puts it behind them, it will drag them to Hell.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "إذا التَبَسَتِ الاُمورُ علَيكُم كَقِطَعِ اللَّيلِ المُظلِمِ فعلَيكُم بالقرآنِ؛ فإنّهُ شافِعٌ مُشَفَّعٌ، وماحِلٌ مُصدَّقٌ، ومَن جَعَلَهُ أمامَهُ قادَهُ إلَى الجَنَّةِ، ومَن جَعَلَهُ خَلفَهُ قادَهُ إلَى النارِ"
+    },
+    {
+     "n": 5151,
+     "by": "The Prophet (SAWA)",
+     "en": "The Prophet (SAWA), when it was said to him that his community will be tested, they asked how they may be delivered from it, to which he replied, ‘The noble Book of Allah that cannot be overcome with falsehood, neither from in front nor from behind. It is descended from the all-Wise, the Praised One. Allah will lead astray whoever seeks knowledge in other than it.’",
+     "quote": false,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "لَمّا قِيلَ لَهُ: اُمَّتُكَ سَتُفتَتَنُ، فَسُئلَ: ما المَخرَجُ مِن ذلكَ؟ — كتابُ اللَّهِ العَزيزُ، الذي لا يَأتيهِ الباطِلُ مِن بَينِ يَدَيهِ ولا مِن خَلفِهِ، تَنزيلٌ مِن حَكيمٍ حَميدٍ، مَنِ ابتَغَى العِلمَ في غَيرِهِ أضَلَّهُ اللَّهُ",
+     "verses": [
+      {
+       "ref": "41:42",
+       "kind": "on"
+      }
+     ]
+    },
+    {
+     "n": 5152,
+     "by": "The Prophet (SAWA)",
+     "en": "You must adhere to the Quran, so take it as an Imam and a leader.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "علَيكُم بالقرآنِ، فاتَّخِذُوهُ إماماً وقائداً"
+    },
+    {
+     "n": 5153,
+     "by": "The Prophet (SAWA)",
+     "en": "The superiority of the Quran over any other speech is as the superiority of Allah over His creation.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "فَضلُ القرآنِ على سائرِ الكلامِ كَفَضلِ اللَّهِ على خَلقِهِ"
+    },
+    {
+     "n": 5154,
+     "by": "The Prophet (SAWA)",
+     "en": "The Quran is rich, and there is no richness without it, and no poverty after it.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "القرآنُ غِنىً، لا غِنىً دونَهُ، ولا فَقرَ بعدَهُ"
+    },
+    {
+     "n": 5155,
+     "by": "The Prophet (SAWA)",
+     "en": "Whoever is given the Quran, and then doubts that someone has been given something more than him, this person has aggrandized something little and belittled something great.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "مَن اُعطِيَ القرآنَ فَظَنَّ أنّ أحَداً اُعطِيَ أكثَرَ ممّا اُعطيَ فقد عَظَّمَ صَغيراً وصَغَّرَ كبيراً"
+    },
+    {
+     "n": 5156,
+     "by": "The Prophet (SAWA)",
+     "en": "Whoever wants the knowledge of the first and the last should explore the Quran.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "مَن أرادَ عِلمَ الأوَّلينَ والآخِرينَ فَلْيُثَوِّرِ القرآنَ"
+    },
+    {
+     "n": 5157,
+     "by": "Imam Ali (AS)",
+     "en": "He, most High, has manifested Himself for them in His Book, without them seeing Him, by showing them His power.",
+     "quote": true,
+     "ar_by": "الإمامُ عليٌّ عليه السلام",
+     "ar": "فَتَجلّى لَهُم سبحانَهُ في كتابِهِ مِن غَيرِ أن يَكُونوا رَأوهُ بما أراهُم مِن قُدرَتِهِ"
+    },
+    {
+     "n": 5158,
+     "by": "Imam Ali (AS)",
+     "en": "Allah Allah [i.e. I advise you] with the Quran, nobody other than you should be quicker in acting according to it.",
+     "quote": true,
+     "ar_by": "الإمامُ عليٌّ عليه السلام",
+     "ar": "اللَّهَ اللَّهَ في القرآنِ، لا يَسبِقُكُم بالعَمَلِ بهِ غَيرُكُم"
+    },
+    {
+     "n": 5159,
+     "by": "Imam Ali (AS)",
+     "en": "Learn the Book of Allah Almighty; for it is the best of speech and the most eloquent exhortation. Get educated through it, for it is the spring of the hearts. Get cured by its light, for it is the cure for everything in the heart. Excel in its recitation for it is the best of stories.",
+     "quote": true,
+     "ar_by": "الإمامُ عليٌّ عليه السلام",
+     "ar": "تَعَلَّمُوا كتابَ اللَّهِ تباركَ وتعالى؛ فإنّهُ أحسَنُ الحَديثِ وأبلَغُ المَوعِظَةِ، وتَفَقَّهُوا فيه فإنّهُ رَبيعُ القُلوبِ، واستَشفُوا بنُورِهِ فإنّه شِفاءٌ لِما في الصُّدورِ، وأحسِنُوا تِلاوَتَهُ فإنّهُ أحسَنُ القَصصِ",
+     "verses": [
+      {
+       "ref": "39:23",
+       "kind": "echo"
+      },
+      {
+       "ref": "10:57",
+       "kind": "echo"
+      },
+      {
+       "ref": "12:3",
+       "kind": "echo"
+      }
+     ]
+    },
+    {
+     "n": 5160,
+     "by": "Imam Ali (AS)",
+     "en": "In it there is the cure for the greatest sickness, which is disbelief, hypocrisy, error, and going astray.",
+     "quote": true,
+     "ar_by": "الإمامُ عليٌّ عليه السلام",
+     "ar": "إنّ فيهِ شِفاءً مِن أكبَرِ الداءِ، وهُو الكُفرُ والنِّفاقُ، والغَيُّ والضَّلالُ",
+     "verses": [
+      {
+       "ref": "17:82",
+       "kind": "echo"
+      }
+     ]
+    },
+    {
+     "n": 5161,
+     "by": "Imam Zayn al-Abidin (AS)",
+     "en": "If everyone from the east to the west was to die, I would not feel lonely if I had the Quran with me.",
+     "quote": true,
+     "ar_by": "الإمامُ زينُ العابدينَ عليه السلام",
+     "ar": "لو ماتَ مَن بَينَ المَشرِقِ والمَغرِبِ لَما استَوحَشتُ بعدَ أن يكونَ القرآنُ مَعي"
+    }
+   ]
+  },
+  {
+   "n": 1510,
+   "title": "The Qur'an is new in every era",
+   "title_ar": "القُرآنُ في كُلِّ زَمانٍ جَديدٌ",
+   "items": [
+    {
+     "n": 5162,
+     "by": "Imam Ali (AS)",
+     "en": "The frequency of its recitation and its falling on ears does not render it old.",
+     "quote": true,
+     "ar_by": "الإمامُ عليٌّ عليه السلام",
+     "ar": "لا تُخلِقُهُ كَثرَةُ الرَّدِّ ووُلوجُ السَّمعِ"
+    },
+    {
+     "n": 5163,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "Imam al-Sadiq (AS), when asked, ‘Why is it that the Quran only increases in freshness the more it is promulgated and taught?’ He replied, ‘Because Allah, Blessed and most High, did not make the Quran for a certain time and not another, or for certain people and not others. It is new in every time and fresh for all people until the Day of Judgment.’",
+     "quote": false,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "لمّا سُئلَ: ما بالُ القرآنِ لا يَزدادُ علَى النَّشرِ والدَّرسِ إلّا غَضاضَةً؟ — لأنَّ اللَّهَ تباركَ وتعالى لم يَجعَلْهُ لِزمانٍ دونَ زَمانٍ، ولا لِناسٍ دونَ ناسٍ، فهُو في كلِّ زَمانٍ جَديدٌ، وعِند كُلِّ قَومٍ غَضٌّ إلى يَومِ القِيامَةِ"
+    }
+   ]
+  },
+  {
+   "n": 1511,
+   "title": "Learning and teaching the Qur'an",
+   "title_ar": "تَعَلُّمُ القُرآنِ وَتَعليمُهُ",
+   "items": [
+    {
+     "n": 5164,
+     "by": "The Prophet (SAWA)",
+     "en": "The best of you are those who learn the Quran, and teach it.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "خِيارُكُم مَن تَعَلَّمَ القرآنَ وعَلَّمَهُ"
+    },
+    {
+     "n": 5165,
+     "by": "The Prophet (SAWA)",
+     "en": "You must learn the Quran, and recite it a lot.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "علَيكُم بتَعَلُّمِ القرآنِ وكَثرَةِ تِلاوَتِهِ"
+    },
+    {
+     "n": 5166,
+     "by": "The Prophet (SAWA)",
+     "en": "Whoever teaches a person the Quran, he becomes his master. He should not disappoint him or favor anything over him.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "مَن عَلَّمَ رجُلاً القرآنَ فهُو مَولاهُ، لا يَخذُلُهُ ولا يَستَأثِرُ علَيهِ"
+    },
+    {
+     "n": 5167,
+     "by": "Imam Ali (AS)",
+     "en": "The right of a child incumbent upon his father is that he should give him a good name, good manners, and teach him the Quran.",
+     "quote": true,
+     "ar_by": "الإمامُ عليٌّ عليه السلام",
+     "ar": "حَقُّ الوَلَدِ علَى الوالِدِ أن يُحَسِّنَ اسمَهُ، ويُحسِّنَ أدَبَهُ، ويُعَلِّمَهُ القرآنَ"
+    },
+    {
+     "n": 5168,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "The believer should be such that he does not die without learning the Quran, or without being engaged in learning it.",
+     "quote": true,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "يَنبَغي للمؤمنِ أن لا يَموتَ حتّى يَتَعَلَّمَ القرآنَ، أو يكونَ في تَعَلُّمِهِ"
+    }
+   ]
+  },
+  {
+   "n": 1512,
+   "title": "Memorising the Qur'an, and the manners of those who carry it",
+   "title_ar": "حِفظُ القُرآنِ و أدبُ حافِظِه",
+   "items": [
+    {
+     "n": 5169,
+     "by": "The Prophet (SAWA)",
+     "en": "Whoever has been endowed by Allah the memorization of His Book, and doubts that someone has been given something better than what he has, has despised the greatest bounty.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "مَن أعطاهُ اللَّهُ حِفظَ كتابِهِ فَظَنَّ أنَّ أحَداً اُعطيَ أفضَلَ مِمّا اُعطيَ فقد غَمَطَ أفضَلَ النِّعمَةِ"
+    },
+    {
+     "n": 5170,
+     "by": "The Prophet (SAWA)",
+     "en": "Someone who has none of the Quran in their self is like a wrecked house.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "إنّ الذي ليسَ في جَوفِهِ شيءٌ من القرآنِ كالبَيتِ الخَرِبِ"
+    },
+    {
+     "n": 5171,
+     "by": "The Prophet (SAWA)",
+     "en": "How wretched is the one who says that he has forgotten such and such verse - rather it is that he has been forgotten. Remember the Quran, for by He who owns my soul, it is stronger at detaching itself from the hearts of men than the detachment of an animal from its shackle.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "بِئسَما لِأحدِكُم أن يَقولَ نَسِيتُ آيَةً كَيتَ وكَيتَ، بَل هو نُسِّيَ استَذكِرُوا القرآنَ، فوالذي نَفسي بيَدِهِ لَهُو أشَدُّ تَفَصِّياً مِن صُدورِ الرِّجالِ مِن النَّعَمِ مِن عُقُلِها"
+    },
+    {
+     "n": 5172,
+     "by": "The Prophet (SAWA)",
+     "en": "The bearers of the Quran [i.e. those who memorize it] are surrounded by the mercy of Allah and are dressed with the light of Allah.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "حَمَلةُ القرآنِ هُمُ المَحفوفُونَ برَحمَةِ اللَّهِ، المَلبوسونَ بنُورِ اللَّهِ عَزَّ وجلَّ"
+    },
+    {
+     "n": 5173,
+     "by": "The Prophet (SAWA)",
+     "en": "The noblemen of my community are the bearers of the Quran [i.e. those who memorize it] and the people of night vigil.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "أشرافُ اُمّتي حَمَلَةُ القرآنِ وأصحابُ الليلِ"
+    },
+    {
+     "n": 5174,
+     "by": "The Prophet (SAWA)",
+     "en": "The worthiest of people in their humbleness, both secretly and openly, are the bearers of the Quran, and the worthiest of people in terms of their prayers and fasting, both secretly and openly, are the bearers of the Quran.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "إنّ أحَقَّ الناسِ بالتَّخَشُّعِ في السِّرِّ والعَلانيَةِ لَحامِلُ القرآنِ، وإنَّ أحَقَّ الناسِ في السِّرِّ والعَلانيَةِ بالصلاةِ والصومِ لَحامِلُ القرآنِ"
+    },
+    {
+     "n": 5175,
+     "by": "The Prophet (SAWA)",
+     "en": "The owner of the Quran [i.e. he who has memorized it] should not be harsh towards those who are harsh with him, nor behave ignorantly like those who are ignorant, while he has the words of Allah inside him.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "لا يَنبغي لِصاحِبِ القرآنِ أن يَحِدَّ مَع مَن حَدَّ، ولا يَجهَلَ مَع مَن يَجهَلُ وفي جَوفِهِ كلامُ اللَّهِ"
+    },
+    {
+     "n": 5176,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "The memorizer of the Quran who acts according to it will be with the envoys, noble and pious.",
+     "quote": true,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "الحافِظُ للقرآنِ العامِلُ بهِ مَع السَّفَرَةِ الكِرامِ البَرَرَةِ"
+    },
+    {
+     "n": 5177,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "Whoever forgets a chapter (surah) from the Quran, it will exemplify to him as a form of a reward and a high station. When he sees it, he will ask, ‘Who are you? How great you are! If only you were mine!’ and it will say to him, ‘Don’t you know me? I am chapter so and so, and if you did not forget me I would have elevated you to this place.’",
+     "quote": true,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "مَن نَسِيَ سُورَةً مِن القرآنِ مُثِّلَت لَهُ في صُورَةٍ حَسَنةٍ ودَرَجةٍ رَفيعَةٍ، فإذا رَآها قالَ: من أنتِ؟ ما أحسَنَكِ! لَيتَكِ لي! فتقولُ: أما تَعرِفُني؟ أنا سُورَةُ كذا وكذا، لو لم تَنسَني لَرَفَعتُكَ إلى هذا المَكانِ"
+    }
+   ]
+  },
+  {
+   "n": 1513,
+   "title": "The call to recite the Qur'an",
+   "title_ar": "الحَثُّ عَلى تِلاوَةِ القُرآنِ",
+   "items": [
+    {
+     "n": 5178,
+     "by": "The Prophet (SAWA)",
+     "en": "When one of you would like to converse with his Lord, he should read the Quran.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "إذا أحَبَّ أحدُكُم أن يُحَدِّثَ رَبَّهُ فَلْيَقرَأْ القرآنَ"
+    },
+    {
+     "n": 5179,
+     "by": "The Prophet (SAWA)",
+     "en": "It will be said to the reciter of the Quran, ‘Read and rise in rank, and recite as you recited in the world, for your station is as per the last verse that you recited.’",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "يقالُ لِصاحِبِ القرآنِ: اِقرَأ وَارقَ ورَتِّلْ كما كنتَ تُرَتِّلُ في دارِ الدنيا، فإنّ مَنزِلَتَكَ عندَ آخِرِ آيَةٍ كُنتَ تَقرَؤها"
+    },
+    {
+     "n": 5180,
+     "by": "The Prophet (SAWA)",
+     "en": "The Prophet (SAWA) said, ‘These hearts rust the way metal rusts.’ He was asked, ‘O Messenger of Allah, and what can clean them?’ He replied, ‘The recitation of the Quran.’",
+     "quote": false,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "إنّ هذهِ القُلوبَ تَصدَأُ كما يَصدَأُ الحَديدُ قيلَ: يا رسولَ اللَّهِ، فما جَلاؤها؟ قالَ: تِلاوَةُ القرآنِ"
+    },
+    {
+     "n": 5181,
+     "by": "The Prophet (SAWA)",
+     "en": "You must read the Quran, for verily reading it is a penance for the sins, protection from the Fire, and a safeguard from punishment.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "علَيكَ بقِراءةِ القرآنِ؛ فإنّ قِراءتَهُ كَفّارةٌ للذُّنوبِ، وسَترٌ في النارِ، وأمانٌ مِن العذابِ"
+    },
+    {
+     "n": 5182,
+     "by": "The Prophet (SAWA)",
+     "en": "O son, do not neglect reading the Quran, for verily the Quran revives the heart, and prevents the committing of the erroneous, wrong and corrupt.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "يا بُنَيَّ، لا تَغفُلْ عَن قِراءةِ القرآنِ؛ فإنَّ القرآنَ يُحيِي القَلبَ، ويَنهى عنِ الفحشاءِ والمُنكَرِ والبَغيِ"
+    }
+   ]
+  },
+  {
+   "n": 1514,
+   "title": "Reciting the Qur'an with a beautiful voice",
+   "title_ar": "قِراءَةُ القُرآنِ بِالصَّوتِ الحَسَنِ",
+   "items": [
+    {
+     "n": 5183,
+     "by": "The Prophet (SAWA)",
+     "en": "For everything there is an ornament, and the ornament of the Quran is a nice voice.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "لِكلِّ شيءٍ حِليَةٌ وحِليَةُ القرآنِ الصَّوتُ الحَسَنُ"
+    },
+    {
+     "n": 5184,
+     "by": "The Prophet (SAWA)",
+     "en": "Decorate the Quran with your voices.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "زَيِّنُوا القرآنَ بأصواتِكُم"
+    },
+    {
+     "n": 5185,
+     "by": "The Prophet (SAWA)",
+     "en": "The Prophet (SAWA), when he was asked about the person with the best voice at reciting the Quran, he said, ‘He who when you hear his recitation you can see that he fears Allah.’",
+     "quote": false,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "لمّا سُئلَ عن أحسَنِ الناسِ صَوتاً بالقرآنِ — مَن إذا سَمِعتَ قِراءَتَهُ رَأيتَ أنّهُ يَخشَى اللَّهَ"
+    },
+    {
+     "n": 5186,
+     "by": "The Prophet (SAWA)",
+     "en": "Read the Quran sorrowfully, for verily it came down sorrowfully.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "اقرَؤوا القرآنَ بالحُزنِ؛ فإنّهُ نَزَلَ بالحُزنِ"
+    }
+   ]
+  },
+  {
+   "n": 1515,
+   "title": "Reciting it as it deserves",
+   "title_ar": "حَقُّ التِّلاوَةِ",
+   "items": [
+    {
+     "n": 5187,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "Imam al-Sadiq (AS), with respect to Allah’s verse “Those to whom We have given the Book follow it as it ought to be followed,” said, ‘They recite its verses and understand its meanings and act according to its laws. They hope for its reward, fear its punishment, take examples from its stories, take lesson from its parables, perform its orders, stay away from what it has prohibited. By Allah, it is not just memorizing its verses, citing its words, reciting its chapters, and learning its parts. They have memorized its words and lost its limits. That which is important is contemplating into its verses; Allah Almighty says, “[It is] a blessed Book that We have sent down to you, so that they may contemplate its signs.”’",
+     "quote": false,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "في قولِهِ تعالى: ﴿الَّذِينَ آتَيناهُمُ الكِتابَ يَتْلُونَهُ حَقَّ تِلاوَتِهِ﴾ — يُرَتِّلُونَ آياتِهِ، ويَتَفَهَّمونَ مَعانِيَهُ، ويَعمَلُونَ بأحكامِهِ، ويَرجُونَ وَعدَهُ، ويَخشَونَ عَذابَهُ، ويَتَمَثَّلُونَ قصَصَهُ، ويَعتَبِرُونَ أمثالَهُ، ويَأتُونَ أوامِرَهُ، ويَجتَنِبونَ نَواهِيَهُ ما هُو واللَّهِ بحِفظِ آياتِهِ وسَردِ حُروفِهِ، وتِلاوَةِ سُوَرِهِ ودَرسِ أعشارِهِ وأخماسِهِ، حَفِظُوا حُروفَهُ وأضاعُوا حُدودَهُ، وإنّما هو تَدَبُّرُ آياتِهِ، يقولُ اللَّهُ تعالى: ﴿كِتابٌ أنْزَلناهُ إلَيكَ مُبارَكٌ لِيَدَّبَّروا آياتِهِ﴾",
+     "verses": [
+      {
+       "ref": "2:121",
+       "kind": "on"
+      },
+      {
+       "ref": "38:29",
+       "kind": "on"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 1516,
+   "title": "The etiquette of recitation",
+   "title_ar": "آدابُ القِراءَةِ",
+   "items": [
+    {
+     "n": 5188,
+     "by": "The Prophet (SAWA)",
+     "en": "The Prophet (SAWA) said, ‘Clean the path of the Quran.’ He was asked, ‘O Messenger of Allah, and what is the path of the Quran?’ He replied, ‘Your mouths.’ They asked, ‘How [should we clean them]?’ He said, ’[By brushing them] With a tooth cleanser (siwak).’",
+     "quote": false,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "نَظِّفُوا طَريقَ القرآنِ، قيلَ: يا رسولَ اللَّهِ، وما طَريقُ القرآنِ؟ قالَ: أفواهُكُم، قيلَ: بماذا؟ قالَ: بالسِّواكِ"
+    },
+    {
+     "n": 5189,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "Imam al-Sadiq (AS), when he was asked about seeking refuge at the beginning of every chapter, said, ‘Yes, seek refuge in Allah from the outcast Satan. And he mentioned that the outcast (al-rajim) is the most wicked of Satans.’",
+     "quote": false,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "لمّا سُئلَ عنِ التَّعوُّذِ عندَ افتِتاحِ كُلِّ سُورَةٍ — نَعَم، فَتَعَوَّذْ بِاللَّهِ مِن الشَّيطانِ الرَّجيمِ، وذَكَرَ أنَّ الرَّجيمَ أخبَثُ الشَّياطينِ",
+     "verses": [
+      {
+       "ref": "16:98",
+       "kind": "on"
+      }
+     ]
+    },
+    {
+     "n": 5190,
+     "by": "The Prophet (SAWA)",
+     "en": "The Prophet (SAWA), with regard to Allah’s verse “and recite the Quran in a measured tone,” said, ‘Recite it clearly, do not disperse it prosaically, nor rave it like raving poetry. Stop where it mentions wonders, and move the hearts with it, and do not let your only concern be [to finish] the end of the chapter.’",
+     "quote": false,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "في قولِهِ تعالى: ﴿وَرَتِّلِ القُرآنَ تَرتيلاً﴾ — بَيِّنْهُ تِبياناً، ولا تَنثُرْهُ نَثرَ البَقْلِ، ولا تَهُذَّهُ هَذَّ الشِّعرِ، قِفُوا عندَ عَجائبِهِ، حَرِّكُوا بهِ القُلوبَ، ولا يَكُن هَمُّ أحَدِكُم آخِرَ السُّورَةِ",
+     "verses": [
+      {
+       "ref": "73:4",
+       "kind": "on"
+      }
+     ]
+    },
+    {
+     "n": 5191,
+     "by": "Imam Ali (AS)",
+     "en": "Verily, there is no good in recitation that does not have contemplation in it. Verily, there is no good in worship that does not have understanding.",
+     "quote": true,
+     "ar_by": "الإمامُ عليٌّ عليه السلام",
+     "ar": "ألا لا خَيرَ في قِراءةٍ ليسَ فيها تَدَبُّرٌ، ألا لا خَيرَ في عِبادَةٍ ليسَ فيها تَفَقُّهٌ",
+     "verses": [
+      {
+       "ref": "47:24",
+       "kind": "echo"
+      },
+      {
+       "ref": "4:82",
+       "kind": "echo"
+      }
+     ]
+    },
+    {
+     "n": 5192,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "Imam al-Sadiq (AS), when asked about completing the Quran in one night, said, ‘I do not like it for you to complete it all in less than a month.’",
+     "quote": false,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "لمّا سُئلَ عن قِراءةِ القرآنِ في ليلَةٍ — لا يُعجِبُني أن تَقرَأهُ في أقَلَّ مِن شَهرٍ"
+    },
+    {
+     "n": 5193,
+     "by": "The Prophet (SAWA)",
+     "en": "The Prophet (SAWA), when asked about the people who recite the best, replied, ‘When you hear their recitation, you see that they fear Allah.’",
+     "quote": false,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "لمّا سُئلَ عن أحسَنِ الناسِ صَوتاً بالقرآنِ — مَن إذا سَمِعتَ قِراءَتَهُ رَأيتَ أنّهُ يَخشَى اللَّهَ"
+    },
+    {
+     "n": 5194,
+     "by": "Imam al-Rida (AS)",
+     "en": "Imam al-Rida (AS) constantly recited the Quran in his bed at night during the path to Khurasan. When he would read a verse that mentioned Heaven or Hell, he would cry and ask Allah for Heaven or seek refuge from Hell.",
+     "quote": false,
+     "ar_by": "",
+     "ar": "عيون أخبار الرِّضا عن رجاءَ بنِ أبي الضحّاكِ — في ذكرِ سيرة الإمام الرِّضا عليه السلام وقد صَحبَه إلى خراسان — يُكثِرُ باللَّيلِ في فِراشِهِ مِن تِلاوَةِ القرآنِ، فإذا مَرَّ بآيَةٍ فيها ذِكرُ جَنّةٍ أو نارٍ بَكى وسَألَ اللَّهَ الجَنّةَ وتَعَوَّذَ بهِ مِن النارِ",
+     "note": "Narrated by Raja' ibn Abi al-Dahhak, who travelled with him, in ʿUyun Akhbar al-Rida."
+    }
+   ]
+  },
+  {
+   "n": 1517,
+   "title": "Those whom the Qur'an curses",
+   "title_ar": "مَن يَلعَنُه القرآنُ",
+   "items": [
+    {
+     "n": 5195,
+     "by": "The Prophet (SAWA)",
+     "en": "Many a reciter of the Quran is cursed by the Quran itself.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "رُبَّ تالِ القرآنِ والقرآنُ يَلعَنُهُ"
+    },
+    {
+     "n": 5196,
+     "by": "The Prophet (SAWA)",
+     "en": "You read the Quran and it prevents you [from sins]. And if it does not prevent you, then you are not reading it [correctly].",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "أنتَ تَقرَأُ القرآنَ ما نَهاكَ، فإذا لم يَنهَكَ فَلَستَ تَقرَؤهُ"
+    },
+    {
+     "n": 5197,
+     "by": "The Prophet (SAWA)",
+     "en": "In Hell there is a metal millstone that grinds the heads of criminal reciters and scholars.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "إنّ في جَهنَّمَ رَحاءً مِن حَديدٍ تُطحَنُ بها رُؤوسُ القُرّاءِ، والعُلَماءِ المُجرمينَ"
+    }
+   ]
+  },
+  {
+   "n": 1518,
+   "title": "Listening to the Qur'an",
+   "title_ar": "استِماعُ القُرآنِ",
+   "items": [
+    {
+     "n": 5198,
+     "by": "The Prophet (SAWA)",
+     "en": "Verily, whoever yearns for Allah should listen to the words of Allah.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "ألا مَن اشتاقَ إلَى اللَّهِ فَليَستَمِعْ كلامَ اللَّهِ"
+    },
+    {
+     "n": 5199,
+     "by": "The Prophet (SAWA)",
+     "en": "Whoever listens to a verse from the Book of Allah, a multiplied reward will be written for him, and whoever recites a verse from the Book of Allah, they will have a light on the Day of Resurrection.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "مَنِ استَمَعَ إلى آيَةٍ مِن كتابِ اللَّهِ كُتِبَت لَهُ حَسَنةً مُضاعَفةً، ومَن تَلا آيَةً مِن كتابِ اللَّهِ كانَت لَهُ نوراً يَومَ القِيامَةِ"
+    },
+    {
+     "n": 5200,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "Imam al-Sadiq (AS), when Zurara asked him whether paying attention and listening was obligatory upon one who hears the Quran being recited, replied, ‘Yes, if the Quran is recited in your presence, it is obligatory for you to listen and pay attention.’",
+     "quote": false,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "لمّا سَألَهُ زُرارَةُ عن وُجوبِ الإنصاتِ والاستِماعِ على مَن يَسمَعُ القرآنَ — نَعَم، إذا قُرئَ القرآنُ عِندَكَ فقد وَجَبَ علَيكَ الاستِماعُ والإنصاتُ",
+     "verses": [
+      {
+       "ref": "7:204",
+       "kind": "on"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 1519,
+   "title": "Caution against interpreting it by opinion",
+   "title_ar": "التَّحذيرُ مِن التَّفسيرِ بِالرَّأيِ",
+   "items": [
+    {
+     "n": 5201,
+     "by": "The Prophet (SAWA)",
+     "en": "Allah the Exalted has said, ‘Those who interpret My words with their own opinion do not believe in Me.’",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "قالَ اللَّهُ جلَّ جلالُه: ما آمَنَ بي مَن فَسَّرَ بِرَأيهِ كَلامي"
+    },
+    {
+     "n": 5202,
+     "by": "The Prophet (SAWA)",
+     "en": "The worst thing I fear for my community after me is for someone to interpret the Quran wrongfully.",
+     "quote": true,
+     "ar_by": "رسولُ اللَّهِ صلى اللَّه عليه وآله",
+     "ar": "أكثَرُ ما أخافُ على اُمَّتِي مِن بَعدي رجُلٌ يَتَأوَّلُ القرآنَ يَضَعُهُ على غيرِ مَواضِعِهِ"
+    },
+    {
+     "n": 5203,
+     "by": "Imam al-Sadiq (AS)",
+     "en": "Whoever interprets the Quran with his own opinion and is correct, will not be rewarded, and if he is wrong, he will bear the burden of a sin.",
+     "quote": true,
+     "ar_by": "الإمامُ الصّادقُ عليه السلام",
+     "ar": "مَن فَسَّرَ القرآنَ بِرَأيهِ فَأصابَ لم يُؤجَرْ، وإن أخطَأَ كانَ إثمُهُ علَيهِ"
+    }
+   ]
+  }
+ ]
+}

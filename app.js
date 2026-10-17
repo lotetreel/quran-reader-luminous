@@ -21,6 +21,10 @@ const TOTAL = 114;
 const THEME_COLORS = { day: "#fafaf7", sepia: "#f6f0e2", night: "#14110d" };
 const EN_SCALES = [0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.45, 1.6, 1.8]; // keep in sync with html[data-ensize] in styles.css
 const SETTINGS_KEY = "quran-reader.settings.v1";
+// bumped when a default changes enough that saved settings should take it up once
+const SETTINGS_REV = 2;
+// a computer screen reads Luminous across the whole width; a phone keeps the focused column
+const WIDE_DEFAULT = typeof matchMedia === "function" && matchMedia("(min-width: 900px)").matches;
 
 const defaults = {
   sura: 1,
@@ -34,8 +38,13 @@ const defaults = {
   translit: true,
   english: true,
   presentLayout: "auto",
-  width: "focused",
+  width: WIDE_DEFAULT ? "wide" : "focused",
   backdrop: "ring",
+  narrations: true,
+  hadith: true,          // narration marks on verses + the panel
+  hLangs: ["ar", "en"],  // languages shown in the panel
+  hOpen: false,          // panel left open (restored on wide screens)
+  rev: SETTINGS_REV,
 };
 
 let settings = { ...defaults };
@@ -44,6 +53,12 @@ try {
   returning = !!localStorage.getItem(SETTINGS_KEY);
   const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
   for (const k of Object.keys(defaults)) if (k in saved) settings[k] = saved[k];
+  if (returning && saved.rev !== SETTINGS_REV) {
+    // rev 2: Wide on a computer
+    settings.width = defaults.width;
+    settings.rev = SETTINGS_REV;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }
 } catch { /* first visit */ }
 
 const app = {
@@ -67,7 +82,8 @@ function parseHash() {
 }
 
 function setHash(sura, aya) {
-  if (landingOpen) { updateBookmarkBtn(); return; } // keep the bare address while the landing page shows
+  // keep the landing page's bare address, or #on-quran, while those show
+  if (landingOpen || roomOpen) { updateBookmarkBtn(); return; }
   const want = aya ? `#${sura}/${aya}` : `#${sura}`;
   if (location.hash !== want) history.replaceState(null, "", want);
   updateBookmarkBtn();
@@ -90,6 +106,10 @@ async function init() {
     return;
   }
   showLoader("Preparing the reader");
+  // narrations are small and load alongside, so verses render with their links;
+  // without them the reader simply goes on without
+  const narrReady = loadNarrations().catch(() => null);
+  const hadithReady = loadHadithIndex().catch(() => null);
   try {
     const res = await fetch("data/manifest.json", { cache: "no-cache" });
     if (!res.ok) throw new Error(res.status);
@@ -99,11 +119,20 @@ async function init() {
     showLoadError();
     return;
   }
+  await Promise.all([narrReady, hadithReady]);
   renderChapterList();
   const deep = parseHash();
+  const room = parseNarrHash();
   // a bare visit to the site opens on the landing page; deep links (#2/255)
   // and the installed app (#continue) go straight to reading
   if (!location.hash) showLanding();
+  if (room) openRoom(room.n); // before the surah, so its hash isn't replaced
+  // someone who studies with the panel open on a wide screen finds it open again
+  if (settings.hOpen && settings.hadith && window.innerWidth >= HP_DOCK_MIN) {
+    hp.open = true;
+    $("#hadithPanel").hidden = false;
+    layoutHadith();
+  }
   openSurah(deep ? deep.s : settings.sura, deep ? deep.a : settings.aya);
 }
 
@@ -112,6 +141,7 @@ async function init() {
 async function openSurah(n, aya = null) {
   if (app.loading || n < 1 || n > TOTAL) return;
   app.loading = true;
+  app.target = aya ?? 1; // scroll mode keeps no verse; the narrations panel still wants it
   settings.sura = n;
   settings.aya = (settings.mode === "verse" || settings.mode === "luminous") ? (aya ?? 1) : null;
   saveSettings();
@@ -171,6 +201,9 @@ function renderSurah() {
   inner.appendChild(header);
   renderVerses(inner);
 
+  const closing = surahEndNarration(n);
+  if (closing) inner.appendChild(closing);
+
   // end-of-surah navigation
   const nav = el("nav", "surah-nav");
   const prev = app.chapters[n - 1];
@@ -193,6 +226,7 @@ function renderSurah() {
   footer.textContent = "۞ ۞ ۞";
   footer.setAttribute("aria-hidden", "true");
   inner.appendChild(footer);
+  hadithSync();
 }
 
 function renderVerses(container) {
@@ -220,6 +254,8 @@ function renderVerses(container) {
       en.textContent = v.english;
       art.appendChild(en);
     }
+    const mark = hadithMarker(v.sura, v.aya);
+    if (mark) art.appendChild(mark);
     list.appendChild(art);
   }
   const header = container.querySelector(".surah-header");
@@ -317,7 +353,10 @@ function renderVerse(dir = 0) {
   next.setAttribute("aria-label", "Next verse");
   next.title = "Next verse (→)";
   next.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  foot.append(prev, count, next);
+  const mid = el("div", "vb-mid");
+  const hb = el("button", "vb-hadith");
+  mid.append(count, hb);
+  foot.append(prev, mid, next);
 
   prev.disabled = ch.sura === 1 && a === 1;
   next.disabled = ch.sura === TOTAL && a === ch.verse_count;
@@ -327,9 +366,11 @@ function renderVerse(dir = 0) {
   stage.append(top, fit, foot);
   inner.appendChild(stage);
 
-  document.title = `${ch.transliteration} ${ch.sura}:${a} — Qur'an Reader`;
+  setTitle(`${ch.transliteration} ${ch.sura}:${a} — Qur'an Reader`);
   $("#progressBar").style.width = (a / ch.verse_count) * 100 + "%";
   setHash(ch.sura, a);
+  setStageHadith(hb, ch.sura, a);
+  hadithSync();
 
   if (typeof ResizeObserver !== "undefined") {
     if (!fitRO) fitRO = new ResizeObserver(() => fitVerse());
@@ -439,7 +480,7 @@ function renderLuminous(dir = 0) {
     </div>
     <div class="lum-nav">
       <button class="lum-btn lum-btn-prev" aria-label="Previous verse" title="Previous verse (←)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <span class="lum-count"></span>
+      <div class="lum-mid"><span class="lum-count"></span><button class="lum-hadith" hidden></button></div>
       <button class="lum-btn lum-btn-next" aria-label="Next verse" title="Next verse (→)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>`;
     inner.appendChild(stage);
@@ -479,10 +520,12 @@ function renderLuminous(dir = 0) {
   const count = stage.querySelector(".lum-count");
   count.textContent = `${a} / ${ch.verse_count}`;
   count.title = `Verse ${a} of ${ch.verse_count}`;
+  setStageHadith(stage.querySelector(".lum-hadith"), ch.sura, a);
 
-  document.title = `${ch.transliteration} ${ch.sura}:${a} — Qur'an Reader · Luminous`;
+  setTitle(`${ch.transliteration} ${ch.sura}:${a} — Qur'an Reader · Luminous`);
   $("#progressBar").style.width = (a / ch.verse_count) * 100 + "%";
   setHash(ch.sura, a);
+  hadithSync();
 
   if (typeof ResizeObserver !== "undefined") {
     if (!lumRO) lumRO = new ResizeObserver(() => fitLuminous());
@@ -749,7 +792,7 @@ function updateTopbar() {
   if (!ch) return;
   $("#tbName").textContent = `${ch.sura} · ${ch.transliteration}`;
   $("#tbArabic").textContent = ch.name_arabic;
-  document.title = `${ch.transliteration} — Qur'an Reader · Luminous`;
+  setTitle(`${ch.transliteration} — Qur'an Reader · Luminous`);
 }
 
 function updateBottomNav() {
@@ -782,6 +825,8 @@ function applySettings() {
   $("#translitToggle").checked = settings.translit;
   $("#englishToggle").checked = settings.english;
   $("#fitToggle").checked = settings.fit;
+  $("#narrToggle").checked = settings.narrations;
+  $("#hadithToggle").checked = settings.hadith;
   setActiveOptions("themeRow", String(settings.theme));
   setActiveOptions("fontRow", settings.font);
   setActiveOptions("sizeRow", String(settings.size));
@@ -837,6 +882,7 @@ function setPresent(on) {
   $("#presentHud").hidden = !on;
   $("#presentToggle").checked = on;
   if (on) {
+    closeHadith();
     if (settings.mode === "scroll") {
       settings.mode = "luminous";
       settings.aya = settings.aya ?? 1;
@@ -1024,6 +1070,7 @@ function submitJump() {
 }
 
 function goToVerse(s, a) {
+  if (roomOpen) closeRoom();
   if (s !== settings.sura || !app.surah) { openSurah(s, a); return; }
   if (a && (settings.mode === "verse" || settings.mode === "luminous")) {
     settings.aya = a;
@@ -1195,6 +1242,18 @@ async function runSearch(q) {
   }
 
   box.innerHTML = "";
+  const nhits = searchNarrations(words, arabic);
+  if (nhits.length) {
+    const ns = jumpSection(`Narrations on the Qur'an · ${nhits.length}`);
+    for (const h of nhits.slice(0, 5)) ns.appendChild(narrJumpItem(h, arabic ? [] : words));
+    if (nhits.length > 5) {
+      const more = el("button", "jr-more");
+      more.textContent = `See all narrations on the Qur'an ›`;
+      more.addEventListener("click", () => { closeJump(); openRoom(nhits[5].n); });
+      ns.appendChild(more);
+    }
+    box.appendChild(ns);
+  }
   const sec = jumpSection(hits.length ? `${hits.length} verse${hits.length === 1 ? "" : "s"}${hits.length > 100 ? " · showing first 100" : ""}` : "No verses found");
   for (const { v, field } of hits.slice(0, 100)) {
     const text = field === "tr" ? (v.transliteration_text || "") : v.english;
@@ -1289,6 +1348,7 @@ function updateBookmarkBtn() {
   const label = cur ? `${on ? "Remove" : "Save"} ${cur.s}:${cur.a}` : "Save this verse";
   btn.setAttribute("aria-label", label);
   btn.title = `${label} (B)`;
+  updateHadithBtn();
 }
 
 let toastTimer = 0;
@@ -1301,6 +1361,712 @@ function showToast(text) {
   t.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.hidden = true; }, 1900);
+}
+
+/* ============================== narrations on the Qur'an ==============================
+   The chapter "The Qur'an" of Mizan al-Hikmah (built into
+   data/narrations/quran.json by tools/build-narrations.py) appears where it
+   helps the reading: as a closing word at the end of a surah, on the
+   landing page, in search, and as a page of its own (#on-quran, #on-quran/5187). */
+
+const narr = { doc: null, byN: new Map() };
+let narrLoad = null;
+let roomOpen = false;
+let roomBuilt = false;
+
+function loadNarrations() {
+  if (!narrLoad) {
+    narrLoad = fetch("data/narrations/quran.json")
+      .then((res) => { if (!res.ok) throw new Error(res.status); return res.json(); })
+      .then((doc) => {
+        for (const sec of doc.sections) {
+          for (const h of sec.items) {
+            h.section = sec;
+            narr.byN.set(h.n, h);
+          }
+        }
+        narr.doc = doc;
+        return doc;
+      })
+      .catch((err) => { narrLoad = null; throw err; });
+  }
+  return narrLoad;
+}
+
+function parseNarrHash() {
+  const m = (location.hash || "").match(/^#on-quran(?:\/(\d{1,5}))?$/);
+  return m ? { n: m[1] ? +m[1] : null } : null;
+}
+
+const QUOTE_ICON = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6.5c-3 1.1-4.8 3.4-4.8 6.6v4.4h5.1v-5.1H7.7c.1-1.9 1.1-3.3 3-4.1zm8.8 0c-3 1.1-4.8 3.4-4.8 6.6v4.4h5.1v-5.1h-2.6c.1-1.9 1.1-3.3 3-4.1z" fill="currentColor"/></svg>`;
+
+// One narration as a card. Speaker over each language, then the words,
+// then where it's from and the verses it speaks to.
+function narrCard(h, { verses = true, actions = true } = {}) {
+  const card = el("article", "nr-card");
+  card.id = `h-${h.n}`;
+  card.dataset.n = String(h.n);
+  const en = h.quote ? `“${h.en}”` : h.en;
+  card.innerHTML = `
+    <div class="nr-head">
+      <span class="nr-by">${escapeHtml(h.by)}</span>
+      ${h.ar_by ? `<span class="nr-by-ar" lang="ar" dir="rtl">${escapeHtml(h.ar_by)}</span>` : ""}
+    </div>
+    <div class="nr-ar" lang="ar" dir="rtl">${escapeHtml(h.ar)}</div>
+    <p class="nr-en">${escapeHtml(en)}</p>
+    ${h.note ? `<p class="nr-note">${escapeHtml(h.note)}</p>` : ""}`;
+  const meta = el("div", "nr-meta");
+  const num = el("span", "nr-num");
+  num.textContent = `Mizan al-Hikmah · ${h.n}`;
+  meta.appendChild(num);
+  if (verses) {
+    for (const { ref } of h.verses || []) {
+      const [s, a] = ref.split(":").map(Number);
+      const ch = app.chapters[s];
+      const b = el("button", "nr-verse");
+      b.textContent = `${ch ? ch.transliteration + " " : ""}${ref} ›`;
+      b.title = `Read ${ref} in context`;
+      b.addEventListener("click", () => { hideLanding(); goToVerse(s, a); });
+      meta.appendChild(b);
+    }
+  }
+  if (actions) {
+    const share = el("button", "nr-share");
+    share.textContent = navigator.share ? "Share" : "Copy";
+    share.addEventListener("click", () => shareNarration(h));
+    meta.appendChild(share);
+  }
+  card.appendChild(meta);
+  return card;
+}
+
+function narrPlain(h) {
+  const en = h.quote ? `${h.by} said, “${h.en}”` : h.en;
+  const ar = h.ar_by ? `${h.ar_by}: ${h.ar}` : h.ar;
+  return `${ar}\n\n${en}\n\n— Mizan al-Hikmah, no. ${h.n}`;
+}
+
+async function shareNarration(h) {
+  const url = `${location.origin}${location.pathname}#on-quran/${h.n}`;
+  if (navigator.share) {
+    try { await navigator.share({ text: narrPlain(h), url }); } catch { /* dismissed */ }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(`${narrPlain(h)}\n${url}`);
+    showToast("Copied");
+  } catch {
+    showToast("Couldn't copy");
+  }
+}
+
+/* --- the closing narration at the end of a surah (scroll mode) --- */
+
+function surahEndNarration(n) {
+  const pool = narr.doc?.end_of_surah;
+  if (!settings.narrations || !pool?.length) return null;
+  const h = narr.byN.get(pool[(n - 1) % pool.length]);
+  if (!h) return null;
+  const box = el("aside", "surah-end-narr");
+  box.setAttribute("aria-label", "A narration on reciting the Qur'an");
+  box.innerHTML = `<div class="sen-label">${QUOTE_ICON}<span>On reciting the Qur'an</span></div>`;
+  const ar = el("div", "sen-ar");
+  ar.lang = "ar";
+  ar.dir = "rtl";
+  ar.textContent = h.ar;
+  const en = el("p", "sen-en");
+  en.textContent = h.quote ? `“${h.en}”` : h.en;
+  box.append(ar, en);
+  if (h.quote) {
+    const by = el("div", "sen-by");
+    by.textContent = h.by;
+    box.appendChild(by);
+  }
+  const more = el("button", "sen-more");
+  more.textContent = "More narrations on the Qur'an ›";
+  more.addEventListener("click", () => openRoom());
+  box.appendChild(more);
+  return box;
+}
+
+/* --- the page of all narrations --- */
+
+function buildRoom() {
+  const doc = narr.doc;
+  const index = $("#nrIndex");
+  const secs = $("#nrSections");
+  index.innerHTML = "";
+  secs.innerHTML = "";
+  doc.sections.forEach((sec, i) => {
+    const id = `nr-sec-${sec.n}`;
+    const chip = el("button", "nr-chip");
+    chip.innerHTML = `<span class="nr-chip-n">${i + 1}</span>${escapeHtml(sec.title)}`;
+    chip.addEventListener("click", () => {
+      document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    index.appendChild(chip);
+
+    const block = el("section", "nr-section");
+    block.id = id;
+    block.innerHTML = `
+      <h2 class="nr-sec-head">
+        <span class="nr-sec-ar" lang="ar" dir="rtl">${escapeHtml(sec.title_ar)}</span>
+        <span class="nr-sec-en">${escapeHtml(sec.title)}</span>
+      </h2>`;
+    for (const h of sec.items) block.appendChild(narrCard(h));
+    secs.appendChild(block);
+  });
+  const src = doc.source;
+  $("#nrSource").innerHTML = `
+    <span class="ld-orn" aria-hidden="true">۞</span>
+    <p>${narr.byN.size} narrations from <i>${escapeHtml(src.book)}</i> by ${escapeHtml(src.author)},
+    volume ${src.volume}, chapter ${src.chapter} (“${escapeHtml(doc.title)}”), with its English translation.
+    The numbers are the book's own.</p>`;
+  roomBuilt = true;
+}
+
+function openRoom(n = null) {
+  if (!narr.doc) {
+    showToast("Narrations need a connection the first time");
+    loadNarrations().then(() => openRoom(n)).catch(() => {});
+    return;
+  }
+  if (!roomBuilt) buildRoom();
+  $("#settingsPanel").hidden = true;
+  roomOpen = true;
+  document.body.classList.add("room-open");
+  const room = $("#narrRoom");
+  room.hidden = false;
+  const want = n ? `#on-quran/${n}` : "#on-quran";
+  if (location.hash !== want) history.replaceState(null, "", want);
+  document.title = "On the Qur'an — Narrations · Qur'an Reader";
+  const card = n && document.getElementById(`h-${n}`);
+  requestAnimationFrame(() => {
+    if (card) {
+      card.scrollIntoView({ block: "center" });
+      card.classList.remove("flash");
+      void card.offsetWidth; // restart animation
+      card.classList.add("flash");
+    } else {
+      room.scrollTop = 0;
+    }
+  });
+  $("#nrBack").focus({ preventScroll: true });
+}
+
+// keepHash: the address already says where to go next (a typed deep link)
+function closeRoom(keepHash = false) {
+  if (!roomOpen) return;
+  roomOpen = false;
+  document.body.classList.remove("room-open");
+  $("#narrRoom").hidden = true;
+  if (keepHash) return;
+  if (landingOpen) history.replaceState(null, "", location.pathname + location.search);
+  else if (app.surah) {
+    setHash(settings.sura, settings.mode === "scroll" ? null : settings.aya);
+  }
+  if (readerTitle) document.title = readerTitle;
+}
+
+// the reader's own title, kept while the narrations page shows its title
+let readerTitle = "";
+function setTitle(t) {
+  readerTitle = t;
+  if (!roomOpen) document.title = t;
+}
+
+/* --- landing: narration of the day --- */
+
+function renderNarrationOfDay() {
+  const pool = narr.doc?.daily;
+  if (!pool?.length) return;
+  // stepped differently from the verse of the day, so the pairs vary
+  const day = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+  const h = narr.byN.get(pool[(day * 7 + 3) % pool.length]);
+  if (!h) return;
+  $("#ldHotdAr").textContent = h.ar;
+  $("#ldHotdEn").textContent = h.quote ? `“${h.en}”` : h.en;
+  $("#ldHotdBy").textContent = h.quote ? h.by : "";
+  $("#ldHotd").hidden = false;
+}
+
+/* --- search --- */
+
+function searchNarrations(words, arabic) {
+  if (!narr.doc || !words.length) return [];
+  const out = [];
+  for (const h of narr.byN.values()) {
+    const hay = arabic ? foldArabic(`${h.ar_by} ${h.ar}`) : fold(`${h.by} ${h.en} ${h.section.title}`);
+    if (words.every((w) => hay.includes(w))) out.push(h);
+  }
+  return out;
+}
+
+function narrJumpItem(h, words) {
+  const btn = el("button", "jr-item");
+  btn.innerHTML = `
+    <span class="jr-ref jr-ref-narr">${QUOTE_ICON}</span>
+    <span class="jr-body">
+      <span class="jr-name">${escapeHtml(h.by)}</span>
+      <span class="jr-snip">${highlight(h.en, words)}</span>
+    </span>`;
+  btn.addEventListener("click", () => { closeJump(); openRoom(h.n); });
+  return btn;
+}
+
+/* ============================== narrations on each verse ==============================
+   Tafsir Ahl al-Bayt's narrations (built into data/tafsir/ by
+   tools/build-tafsir.py): Arabic, English and Persian for 4,600 verses.
+   The Qur'an stays first. A verse only shows a faint count; the narrations
+   open in a panel beside the reading (docked on wide screens, a sheet on a
+   phone) that follows you from verse to verse until you close it. */
+
+const hadith = { index: null, indexLoad: null, chunks: new Map() };
+const hp = { open: false, s: 0, a: 0, filter: "all", data: null, token: 0 };
+const HP_LANG_ORDER = ["ar", "en", "fa"];
+const HP_DOCK_MIN = 1200;
+
+function loadHadithIndex() {
+  if (!hadith.indexLoad) {
+    hadith.indexLoad = fetch("data/tafsir/index.json")
+      .then((res) => { if (!res.ok) throw new Error(res.status); return res.json(); })
+      .then((ix) => (hadith.index = ix))
+      .catch((err) => { hadith.indexLoad = null; throw err; });
+  }
+  return hadith.indexLoad;
+}
+
+const hadithCount = (s, a) => hadith.index?.counts[s]?.[a - 1] ?? 0;
+const hadithIntro = (s) => hadith.index?.intro[s] ?? 0;
+const hadithTotal = (s, a) => hadithCount(s, a) + (a === 1 ? hadithIntro(s) : 0);
+
+function hadithChunk(s, a) {
+  const starts = hadith.index?.chunks[s] || [1];
+  let k = 1;
+  starts.forEach((start, i) => { if (start <= a) k = i + 1; });
+  return k;
+}
+
+function loadHadithChunk(s, k) {
+  const key = `${s}-${k}`;
+  if (!hadith.chunks.has(key)) {
+    hadith.chunks.set(key, fetch(`data/tafsir/${pad3(s)}-${k}.json`)
+      .then((res) => { if (!res.ok) throw new Error(res.status); return res.json(); })
+      .catch((err) => { hadith.chunks.delete(key); throw err; }));
+  }
+  return hadith.chunks.get(key);
+}
+
+async function loadHadith(s, a) {
+  const doc = await loadHadithChunk(s, hadithChunk(s, a));
+  return { intro: a === 1 ? doc.intro || [] : [], verse: doc.verses[a] || [] };
+}
+
+// the next verse after (s, a) that has narrations, if any
+function nextHadithVerse(s, a) {
+  for (let ss = s; ss <= TOTAL; ss++) {
+    const counts = hadith.index?.counts[ss] || [];
+    for (let aa = ss === s ? a + 1 : 1; aa <= counts.length; aa++) {
+      if (hadithTotal(ss, aa)) return { s: ss, a: aa };
+    }
+  }
+  return null;
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/* --- the quiet marks in the reader --- */
+
+function hadithMarker(s, a) {
+  if (!settings.hadith) return null;
+  const n = hadithTotal(s, a);
+  if (!n) return null;
+  const b = el("button", "v-hadith");
+  b.innerHTML = `${QUOTE_ICON}<span>${n}</span>`;
+  b.title = `${plural(n, "narration")} on ${s}:${a}`;
+  b.setAttribute("aria-label", b.title);
+  b.addEventListener("click", (e) => { e.stopPropagation(); openHadith(s, a); });
+  return b;
+}
+
+// the count beside the verse number in Luminous and Verse-by-verse
+function setStageHadith(btn, s, a) {
+  if (!btn) return;
+  const n = settings.hadith ? hadithTotal(s, a) : 0;
+  btn.hidden = !n;
+  if (!n) return;
+  btn.innerHTML = `${QUOTE_ICON}<span>${n}</span>`;
+  btn.title = `${plural(n, "narration")} on this verse (N)`;
+  btn.setAttribute("aria-label", btn.title);
+  btn.setAttribute("aria-pressed", String(hp.open));
+  btn.onclick = (e) => { e.stopPropagation(); toggleHadith(); };
+}
+
+function updateHadithBtn() {
+  const btn = $("#hadithBtn");
+  btn.hidden = !settings.hadith;
+  const cur = currentVerse();
+  const n = cur ? hadithTotal(cur.s, cur.a) : 0;
+  const badge = $("#hadithBtnCount");
+  badge.hidden = !n;
+  badge.textContent = n > 99 ? "99+" : String(n);
+  btn.classList.toggle("active", hp.open);
+  btn.classList.toggle("none", !n);
+  btn.setAttribute("aria-pressed", String(hp.open));
+  const label = cur ? `${n ? plural(n, "narration") : "No narrations"} on ${cur.s}:${cur.a}` : "Narrations";
+  btn.setAttribute("aria-label", label);
+  btn.title = `${label} (N)`;
+}
+
+function markActiveVerse() {
+  document.querySelector(".verse.hp-active")?.classList.remove("hp-active");
+  if (hp.open && settings.mode === "scroll") document.getElementById(`v-${hp.s}-${hp.a}`)?.classList.add("hp-active");
+}
+
+/* --- opening, closing, following the reader --- */
+
+function toggleHadith() {
+  if (hp.open) { closeHadith(); return; }
+  const cur = currentVerse();
+  if (cur) openHadith(cur.s, cur.a);
+}
+
+function openHadith(s, a) {
+  if (presenting) return;
+  hp.open = true;
+  settings.hOpen = true;
+  saveSettings();
+  $("#settingsPanel").hidden = true;
+  $("#hadithPanel").hidden = false;
+  layoutHadith();
+  setHadithVerse(s, a);
+  if (!document.body.classList.contains("hp-docked")) $("#hpBody").focus({ preventScroll: true });
+}
+
+function closeHadith() {
+  if (!hp.open) return;
+  hp.open = false;
+  settings.hOpen = false;
+  saveSettings();
+  $("#hadithPanel").hidden = true;
+  layoutHadith();
+  markActiveVerse();
+  updateHadithBtn();
+  for (const b of document.querySelectorAll(".lum-hadith, .vb-hadith")) b.setAttribute("aria-pressed", "false");
+}
+
+// docked beside the reading on a wide screen; over it (a sheet) otherwise
+function layoutHadith() {
+  const docked = hp.open && window.innerWidth >= HP_DOCK_MIN;
+  document.body.classList.toggle("hp-open", hp.open);
+  document.body.classList.toggle("hp-docked", docked);
+  $("#hpBackdrop").hidden = !hp.open || docked;
+  if (settings.mode === "luminous") fitLuminous();
+  else if (settings.mode === "verse") fitVerse();
+}
+
+function setHadithVerse(s, a) {
+  if (hp.s !== s || hp.a !== a) hp.filter = "all";
+  hp.s = s;
+  hp.a = a;
+  renderHadith();
+}
+
+// after the reader moves: Luminous and Verse-by-verse carry the panel along
+function hadithSync() {
+  updateHadithBtn();
+  if (!hp.open || !app.surah) return;
+  const s = app.surah.chapter.sura;
+  if (settings.mode === "scroll") {
+    if (hp.s !== s) setHadithVerse(s, app.target || 1);
+    else markActiveVerse();
+    return;
+  }
+  const a = settings.aya ?? 1;
+  if (hp.s !== s || hp.a !== a) setHadithVerse(s, a);
+}
+
+function hadithStep(dir) {
+  if (settings.mode !== "scroll" && app.surah?.chapter.sura === hp.s) {
+    verseStep(dir); // the panel follows the reader
+    return;
+  }
+  let { s, a } = hp;
+  a += dir;
+  if (a < 1) {
+    if (s <= 1) return;
+    s -= 1;
+    a = app.chapters[s].verse_count;
+  } else if (a > app.chapters[s].verse_count) {
+    if (s >= TOTAL) return;
+    s += 1;
+    a = 1;
+  }
+  setHadithVerse(s, a);
+  revealVerse(s, a);
+}
+
+// bring a verse into view in the reader without flashing it
+function revealVerse(s, a) {
+  if (settings.mode !== "scroll") { goToVerse(s, a); return; }
+  if (app.surah?.chapter.sura !== s) { openSurah(s, a); return; }
+  document.getElementById(`v-${s}-${a}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+/* --- the panel's contents --- */
+
+async function renderHadith() {
+  const { s, a } = hp;
+  const token = ++hp.token;
+  const ch = app.chapters[s];
+  $("#hpRef").textContent = `${ch ? ch.transliteration : `Surah ${s}`} ${s}:${a}`;
+  const v = app.surah?.chapter.sura === s ? app.surah.verses.find((x) => x.aya === a) : null;
+  $("#hpVerse").textContent = v ? v.english : "";
+  $("#hpVerse").hidden = !v;
+  $("#hpPrev").disabled = s === 1 && a === 1;
+  $("#hpNext").disabled = s === TOTAL && a === (ch?.verse_count ?? 0);
+  applyHadithLangs();
+  markActiveVerse();
+  updateHadithBtn();
+
+  const body = $("#hpBody");
+  const filter = $("#hpFilter");
+  if (!hadith.index) {
+    try { await loadHadithIndex(); } catch { /* handled below as a load failure */ }
+    if (token !== hp.token) return;
+  }
+  if (!hadithTotal(s, a)) {
+    hp.data = null;
+    filter.hidden = true;
+    body.innerHTML = "";
+    body.appendChild(hadithEmpty(s, a));
+    return;
+  }
+  filter.hidden = true; // the last verse's speakers don't belong here
+  body.innerHTML = `<div class="hp-status"><span class="hp-spin" aria-hidden="true"></span>Loading narrations…</div>`;
+  let data;
+  try {
+    data = await loadHadith(s, a);
+  } catch {
+    if (token !== hp.token) return;
+    body.innerHTML = `<div class="hp-status">Couldn't load the narrations. Check your connection and try again.</div>`;
+    return;
+  }
+  if (token !== hp.token) return;
+  hp.data = data;
+  renderHadithFilter();
+  renderHadithList();
+  body.scrollTop = 0;
+  const next = a < (ch?.verse_count ?? 0) ? hadithChunk(s, a + 1) : 0;
+  if (next) loadHadithChunk(s, next).catch(() => {}); // the next verse opens instantly
+}
+
+function hadithEmpty(s, a) {
+  const box = el("div", "hp-empty");
+  box.innerHTML = `<p>No narrations on this verse.</p>`;
+  const nx = nextHadithVerse(s, a);
+  if (nx) {
+    const b = el("button", "hp-next-with");
+    const ch = app.chapters[nx.s];
+    b.textContent = `Next with narrations: ${nx.s === s ? "" : (ch?.transliteration ?? "") + " "}${nx.s}:${nx.a} ›`;
+    b.addEventListener("click", () => { setHadithVerse(nx.s, nx.a); revealVerse(nx.s, nx.a); });
+    box.appendChild(b);
+  }
+  return box;
+}
+
+const shortName = (by) => by.replace(/\s*\((?:AS|SAWA)\)$/, "");
+
+function renderHadithFilter() {
+  const box = $("#hpFilter");
+  box.innerHTML = "";
+  const all = [...hp.data.intro, ...hp.data.verse];
+  const who = new Map();
+  for (const e of all) {
+    const w = who.get(e.k) || { k: e.k, by: e.k === "other" ? "Others" : e.by, kind: e.kind, n: 0 };
+    w.n++;
+    who.set(e.k, w);
+  }
+  if (all.length < 5 || who.size < 2) {
+    box.hidden = true;
+    hp.filter = "all";
+    return;
+  }
+  if (hp.filter !== "all" && !who.has(hp.filter)) hp.filter = "all";
+  box.hidden = false;
+  const chip = (k, label, n) => {
+    const b = el("button", "hp-chip" + (hp.filter === k ? " active" : ""));
+    b.innerHTML = `${escapeHtml(label)} <span class="hp-chip-n">${n}</span>`;
+    b.setAttribute("aria-pressed", String(hp.filter === k));
+    b.addEventListener("click", () => {
+      hp.filter = k;
+      for (const c of box.children) {
+        c.classList.toggle("active", c === b);
+        c.setAttribute("aria-pressed", String(c === b));
+      }
+      renderHadithList();
+      $("#hpBody").scrollTop = 0;
+    });
+    return b;
+  };
+  box.appendChild(chip("all", "All", all.length));
+  // the Prophet and the Imams first, then commentators and companions
+  const order = [...who.values()].sort((x, y) => (x.kind === "m" ? 0 : 1) - (y.kind === "m" ? 0 : 1) || y.n - x.n);
+  for (const w of order) box.appendChild(chip(w.k, shortName(w.by), w.n));
+}
+
+function renderHadithList() {
+  const body = $("#hpBody");
+  body.innerHTML = "";
+  // the Prophet and his Household first, then commentators and companions;
+  // within each, the book's own order
+  const rank = (e) => (e.kind === "m" ? 0 : e.kind === "c" ? 1 : 2);
+  const pick = (es) => (hp.filter === "all" ? es : es.filter((e) => e.k === hp.filter))
+    .map((e, i) => [e, i]).sort((x, y) => rank(x[0]) - rank(y[0]) || x[1] - y[1]).map(([e]) => e);
+  const intro = pick(hp.data.intro);
+  const verse = pick(hp.data.verse);
+  const ch = app.chapters[hp.s];
+  if (intro.length) {
+    body.appendChild(hpGroupHead(`On Surah ${ch?.transliteration ?? hp.s}`, "Its virtues, and the merit of reciting it"));
+    intro.forEach((e) => body.appendChild(hadithCard(e)));
+  }
+  if (verse.length) {
+    if (intro.length) body.appendChild(hpGroupHead(`On verse ${hp.s}:${hp.a}`));
+    verse.forEach((e) => body.appendChild(hadithCard(e)));
+  }
+  const foot = el("div", "hp-foot");
+  const nx = nextHadithVerse(hp.s, hp.a);
+  if (nx) {
+    const b = el("button", "hp-next-with");
+    const nch = app.chapters[nx.s];
+    b.textContent = `Next with narrations: ${nx.s === hp.s ? "" : (nch?.transliteration ?? "") + " "}${nx.s}:${nx.a} ›`;
+    b.addEventListener("click", () => { setHadithVerse(nx.s, nx.a); revealVerse(nx.s, nx.a); });
+    foot.appendChild(b);
+  }
+  const src = el("p", "hp-src");
+  src.textContent = "From Tafsir Ahl al-Bayt (peace be upon them), with its Persian translation and an English translation.";
+  foot.appendChild(src);
+  body.appendChild(foot);
+  requestAnimationFrame(markLongHadith);
+}
+
+function hpGroupHead(title, sub) {
+  const h = el("div", "hp-group");
+  h.innerHTML = `<span class="hp-group-title">${escapeHtml(title)}</span>${sub ? `<span class="hp-group-sub">${escapeHtml(sub)}</span>` : ""}`;
+  return h;
+}
+
+// verse references written "(73:4)" in the English become links
+function linkVerseRefs(html) {
+  return html.replace(/\((\d{1,3}):(\d{1,3})\)/g, (m, s, a) => {
+    const ch = app.chapters[+s];
+    if (!ch || +a < 1 || +a > ch.verse_count) return m;
+    return `(<button class="hn-vref" data-s="${+s}" data-a="${+a}" title="${escapeHtml(ch.transliteration)} ${s}:${a}">${s}:${a}</button>)`;
+  });
+}
+
+function hadithCard(e) {
+  const card = el("article", "hn");
+  const tag = e.kind === "c" ? `<span class="hn-tag">commentary</span>` : e.kind === "s" && e.k !== "other" ? `<span class="hn-tag">companion</span>` : "";
+  const paras = (t) => t.split(/\n{2,}/).map((p) => `<p>${linkVerseRefs(escapeHtml(p.trim()))}</p>`).join("");
+  card.innerHTML = `
+    <header class="hn-head"><span class="hn-by">${escapeHtml(e.by)}</span>${tag}</header>
+    ${e.via ? `<div class="hn-via">${escapeHtml(e.via)}</div>` : ""}
+    <div class="hn-text">
+      ${e.ar ? `<div class="hn-ar" lang="ar" dir="rtl">${e.ar_by ? `<span class="hn-ar-by">${escapeHtml(e.ar_by)}</span> ` : ""}${escapeHtml(e.ar)}</div>` : ""}
+      ${e.en ? `<div class="hn-en">${paras(e.en)}</div>` : ""}
+      ${e.fa ? `<div class="hn-fa" lang="fa" dir="rtl">${escapeHtml(e.fa)}</div>` : ""}
+    </div>
+    <button class="hn-more" hidden>Continue reading</button>
+    <footer class="hn-foot">
+      ${e.book ? `<span class="hn-book">${escapeHtml(e.book.replace(/\s*\(peace be upon them\)/i, ""))}</span>` : ""}
+      <span class="hn-actions">
+        ${e.refs ? `<button class="hn-src" aria-expanded="false">Sources</button>` : ""}
+        <button class="hn-copy">${navigator.share ? "Share" : "Copy"}</button>
+      </span>
+      ${e.refs ? `<p class="hn-refs" hidden>${escapeHtml(e.refs)}</p>` : ""}
+    </footer>`;
+  card.querySelector(".hn-more").addEventListener("click", (ev) => {
+    card.classList.remove("hn-long");
+    ev.currentTarget.hidden = true;
+  });
+  card.querySelector(".hn-src")?.addEventListener("click", (ev) => {
+    const refs = card.querySelector(".hn-refs");
+    refs.hidden = !refs.hidden;
+    ev.currentTarget.setAttribute("aria-expanded", String(!refs.hidden));
+  });
+  card.querySelector(".hn-copy").addEventListener("click", () => shareHadith(e));
+  for (const b of card.querySelectorAll(".hn-vref")) {
+    b.addEventListener("click", () => {
+      const s = +b.dataset.s, a = +b.dataset.a;
+      setHadithVerse(s, a);
+      revealVerse(s, a);
+    });
+  }
+  return card;
+}
+
+// long narrations open folded, with "Continue reading"; measured after layout
+// and again whenever the shown languages change
+function markLongHadith() {
+  for (const card of document.querySelectorAll("#hpBody .hn")) {
+    const more = card.querySelector(".hn-more");
+    if (more.dataset.opened) continue;
+    card.classList.add("hn-long");
+    const text = card.querySelector(".hn-text");
+    const long = text.scrollHeight > text.clientHeight + 24;
+    card.classList.toggle("hn-long", long);
+    more.hidden = !long;
+    if (long) more.onclick = () => { more.dataset.opened = "1"; };
+  }
+}
+
+function hadithLangs() {
+  const langs = (settings.hLangs || []).filter((l) => HP_LANG_ORDER.includes(l));
+  return langs.length ? langs : ["ar", "en"];
+}
+
+function applyHadithLangs() {
+  const langs = hadithLangs();
+  const panel = $("#hadithPanel");
+  for (const l of HP_LANG_ORDER) panel.dataset[l] = langs.includes(l) ? "1" : "0";
+  for (const b of $("#hpLangs").children) {
+    const on = langs.includes(b.dataset.lang);
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", String(on));
+  }
+}
+
+function toggleHadithLang(lang) {
+  const langs = hadithLangs();
+  const next = langs.includes(lang) ? langs.filter((l) => l !== lang) : [...langs, lang];
+  if (!next.length) { showToast("Keep at least one language"); return; }
+  settings.hLangs = HP_LANG_ORDER.filter((l) => next.includes(l));
+  saveSettings();
+  applyHadithLangs();
+  requestAnimationFrame(markLongHadith);
+}
+
+async function shareHadith(e) {
+  const langs = hadithLangs();
+  const ch = app.chapters[hp.s];
+  const parts = [e.by];
+  if (langs.includes("ar") && e.ar) parts.push(e.ar);
+  if (langs.includes("en") && e.en) parts.push(e.en);
+  if (langs.includes("fa") && e.fa) parts.push(e.fa);
+  parts.push(`— ${e.book || "Tafsir Ahl al-Bayt"} · on ${ch ? ch.transliteration + " " : ""}${hp.s}:${hp.a}`);
+  const text = parts.join("\n\n");
+  const url = `${location.origin}${location.pathname}#${hp.s}/${hp.a}`;
+  if (navigator.share) {
+    try { await navigator.share({ text, url }); } catch { /* dismissed */ }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(`${text}\n${url}`);
+    showToast("Copied");
+  } catch {
+    showToast("Couldn't copy");
+  }
 }
 
 /* ============================== landing page ============================== */
@@ -1325,6 +2091,7 @@ function showLanding() {
   if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   updateLanding();
   renderVerseOfDay();
+  renderNarrationOfDay();
 }
 
 function hideLanding() {
@@ -1520,6 +2287,43 @@ function bindEvents() {
     saveSettings();
     reRenderVerses();
   });
+  $("#narrToggle").addEventListener("change", (e) => {
+    settings.narrations = e.target.checked;
+    saveSettings();
+    if (!app.surah) return;
+    const y = window.scrollY;
+    renderReader(); // the end-of-surah narration
+    if (settings.mode === "scroll") window.scrollTo(0, y);
+  });
+
+  // narrations on each verse
+  $("#hadithBtn").addEventListener("click", toggleHadith);
+  $("#hpClose").addEventListener("click", closeHadith);
+  $("#hpBackdrop").addEventListener("click", closeHadith);
+  $("#hpPrev").addEventListener("click", () => hadithStep(-1));
+  $("#hpNext").addEventListener("click", () => hadithStep(1));
+  $("#hpLangs").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-lang]");
+    if (b) toggleHadithLang(b.dataset.lang);
+  });
+  $("#hadithToggle").addEventListener("change", (e) => {
+    settings.hadith = e.target.checked;
+    saveSettings();
+    if (!settings.hadith) closeHadith();
+    updateHadithBtn();
+    if (!app.surah) return;
+    const y = window.scrollY;
+    renderReader();
+    if (settings.mode === "scroll") window.scrollTo(0, y);
+  });
+
+  // narrations on the Qur'an
+  $("#sideNarr").addEventListener("click", () => {
+    document.body.classList.remove("nav-open");
+    openRoom();
+  });
+  $("#nrBack").addEventListener("click", () => closeRoom());
+  $("#ldHotdMore").addEventListener("click", () => openRoom());
 
   // navigation
   $("#prevBtn").addEventListener("click", () => openSurah(settings.sura - 1));
@@ -1541,11 +2345,17 @@ function bindEvents() {
       if (!$("#jumpOverlay").hidden) return closeJump();
       if (!$("#settingsPanel").hidden) return ($("#settingsPanel").hidden = true);
       if (document.body.classList.contains("nav-open")) return document.body.classList.remove("nav-open");
+      if (roomOpen) return closeRoom();
+      if (hp.open) return closeHadith();
       return;
     }
     const target = e.target instanceof Element ? e.target : null;
     if (target && target.matches("input, textarea, select")) return;
     if (!$("#jumpOverlay").hidden) return;
+    if (roomOpen) { // a page of its own: keys scroll it, they don't turn verses
+      if (e.key === "g" || e.key === "G") { e.preventDefault(); openJump(); }
+      return;
+    }
     if (landingOpen) {
       if (e.key === "Enter" && !(target && target.matches("button"))) $("#ldContinue").click();
       else if (e.key === "g" || e.key === "G" || e.key === "/") { e.preventDefault(); $("#ldChoose").click(); }
@@ -1561,7 +2371,12 @@ function bindEvents() {
       e.preventDefault();
       openJump();
       return;
+    } else if ((e.key === "n" || e.key === "N") && settings.hadith && !presenting) {
+      toggleHadith();
+      return;
     }
+    // inside the panel, Space and the up/down keys scroll the narrations
+    if (target && target.closest("#hadithPanel") && [" ", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) return;
     // a focused button already acts on Space/Enter natively — don't double-step
     if (target && target.matches("button") && (e.key === " " || e.key === "Enter")) return;
     const inVerse = document.documentElement.dataset.mode === "verse" || document.documentElement.dataset.mode === "luminous";
@@ -1595,6 +2410,7 @@ function bindEvents() {
 
   window.addEventListener("resize", () => {
     if (!isMobile()) document.body.classList.remove("nav-open");
+    if (hp.open) layoutHadith();
     const mode = document.documentElement.dataset.mode;
     if (mode === "verse") fitVerse();
     else if (mode === "luminous") fitLuminous();
@@ -1628,7 +2444,7 @@ function bindEvents() {
   $("#presentExit").addEventListener("click", () => setPresent(false));
   document.addEventListener("click", (e) => {
     if (!presenting || e.closedPanel) return;
-    if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, button, a, input, select, .vb-foot")) return;
+    if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, #narrRoom, #hadithPanel, button, a, input, select, .vb-foot")) return;
     // Once faded, the HUD stops taking taps, so a tap aimed at its buttons
     // lands on the stage. Treat that as "show the controls", not "next verse".
     const hud = $("#presentHud").getBoundingClientRect();
@@ -1654,7 +2470,10 @@ function bindEvents() {
 
   // external hash edits (typing a deep link, another tab) navigate the reader
   window.addEventListener("hashchange", () => {
+    const nh = parseNarrHash();
+    if (nh) { openRoom(nh.n); return; }
     const h = parseHash();
+    if (h && roomOpen) closeRoom(true);
     if (h && landingOpen) hideLanding();
     if (!h || app.loading) return;
     if (h.s === settings.sura) {

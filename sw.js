@@ -8,7 +8,7 @@
 const VERSION = "v1";
 const SHELL = `shell-${VERSION}`;
 const DATA = `data-${VERSION}`;
-const SHELL_FILES = ["./", "index.html", "app.js", "styles.css", "fonts/fonts.css", "manifest.webmanifest", "data/manifest.json"];
+const SHELL_FILES = ["./", "index.html", "app.js", "styles.css", "fonts/fonts.css", "manifest.webmanifest", "data/manifest.json", "data/narrations/quran.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -48,7 +48,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   const path = url.pathname;
-  if (path.startsWith("/data/surahs/") || path.startsWith("/fonts/") || path.startsWith("/icons/")) {
+  if (path.startsWith("/data/surahs/") || path.startsWith("/data/tafsir/") || path.startsWith("/fonts/") || path.startsWith("/icons/")) {
     event.respondWith(cacheFirst(req, DATA));
     return;
   }
