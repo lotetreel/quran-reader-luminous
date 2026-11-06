@@ -38,3 +38,7 @@ jobs:
           projectId: quran-reader-live
           channelId: live
           target: quran
+          # 15.35.0 first asks the Service Usage API whether Hosting is enabled, which this
+          # deploy key may not do (403 on serviceusage.services.get); 15.34.0 deploys.
+          # Back to latest once the key has the Service Usage Consumer role.
+          firebaseToolsVersion: "15.34.0"
