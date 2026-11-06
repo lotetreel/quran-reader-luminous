@@ -82,8 +82,8 @@ function parseHash() {
 }
 
 function setHash(sura, aya) {
-  // keep the landing page's bare address, or #on-quran, while those show
-  if (landingOpen || roomOpen) { updateBookmarkBtn(); return; }
+  // keep the landing page's bare address, #on-quran or #majlis, while those show
+  if (landingOpen || roomOpen || mj.open) { updateBookmarkBtn(); return; }
   const want = aya ? `#${sura}/${aya}` : `#${sura}`;
   if (location.hash !== want) history.replaceState(null, "", want);
   updateBookmarkBtn();
@@ -123,10 +123,12 @@ async function init() {
   renderChapterList();
   const deep = parseHash();
   const room = parseNarrHash();
+  const majlis = parseMajlisHash();
   // a bare visit to the site opens on the landing page; deep links (#2/255)
   // and the installed app (#continue) go straight to reading
   if (!location.hash) showLanding();
   if (room) openRoom(room.n); // before the surah, so its hash isn't replaced
+  if (majlis) openMajlis(majlis.id, majlis.at);
   // someone who studies with the panel open on a wide screen finds it open again
   if (settings.hOpen && settings.hadith && window.innerWidth >= HP_DOCK_MIN) {
     hp.open = true;
@@ -1070,6 +1072,7 @@ function submitJump() {
 }
 
 function goToVerse(s, a) {
+  if (mj.open) closeMajlis();
   if (roomOpen) closeRoom();
   if (s !== settings.sura || !app.surah) { openSurah(s, a); return; }
   if (a && (settings.mode === "verse" || settings.mode === "luminous")) {
@@ -1572,7 +1575,7 @@ function closeRoom(keepHash = false) {
 let readerTitle = "";
 function setTitle(t) {
   readerTitle = t;
-  if (!roomOpen) document.title = t;
+  if (!roomOpen && !mj.open) document.title = t;
 }
 
 /* --- landing: narration of the day --- */
@@ -2069,6 +2072,460 @@ async function shareHadith(e) {
   }
 }
 
+/* ============================== majlis ==============================
+   Laments (latmiyyat) to put on a screen at a gathering, one verse at a
+   time while the reciter recites. They live in data/majlis/laments.json;
+   #majlis lists them, #majlis/ya-zahra opens one on its title and
+   #majlis/ya-zahra/3 at its third verse. Each lament names a theme
+   (.mj-theme-zahra in styles.css). A page of its own over the reader,
+   like the narrations page, with its own present mode, keys and wake lock. */
+
+const mj = { doc: null, load: null, open: false, lament: null, at: 0, presenting: false, lock: null, idle: 0, wasIdle: false };
+const MAJLIS_COLOR = "#0a0507";
+const MJ_FIT_MIN = 0.5, MJ_FIT_MAX = 3.2;
+const mjFitCache = new Map(); // lament + stage size -> the size its verses share
+let mjRO = null;
+let petalField = "";
+
+function loadLaments() {
+  if (!mj.load) {
+    mj.load = fetch("data/majlis/laments.json")
+      .then((res) => { if (!res.ok) throw new Error(res.status); return res.json(); })
+      .then((doc) => { mj.doc = doc; return doc; })
+      .catch((err) => { mj.load = null; throw err; });
+  }
+  return mj.load;
+}
+
+function parseMajlisHash() {
+  const m = (location.hash || "").match(/^#majlis(?:\/([a-z0-9-]+)(?:\/(\d{1,2}))?)?$/);
+  return m ? { id: m[1] || null, at: m[2] ? +m[2] : 0 } : null;
+}
+
+async function openMajlis(id = null, at = 0) {
+  if (!mj.doc) {
+    try { await loadLaments(); } catch {
+      showToast("The majlis needs a connection the first time");
+      return;
+    }
+  }
+  if (presenting) setPresent(false);
+  if (roomOpen) closeRoom(true);
+  $("#settingsPanel").hidden = true;
+  document.body.classList.remove("nav-open");
+  mj.open = true;
+  document.body.classList.add("majlis-open");
+  $("#majlis").hidden = false;
+  document.querySelector('meta[name="theme-color"]').content = MAJLIS_COLOR;
+  const lament = id && mj.doc.laments.find((l) => l.id === id);
+  if (lament) showLament(lament, at);
+  else showMajlisHome();
+}
+
+// keepHash: the address already says where to go next (a typed deep link)
+function closeMajlis(keepHash = false) {
+  if (!mj.open) return;
+  mjSetPresent(false);
+  mj.open = false;
+  mj.lament = null;
+  document.body.classList.remove("majlis-open");
+  $("#majlis").hidden = true;
+  $("#mjCenter").replaceChildren();
+  document.querySelector('meta[name="theme-color"]').content = THEME_COLORS[settings.theme];
+  if (keepHash) return;
+  if (landingOpen) history.replaceState(null, "", location.pathname + location.search);
+  else if (app.surah) setHash(settings.sura, settings.mode === "scroll" ? null : settings.aya);
+  if (readerTitle) document.title = readerTitle;
+}
+
+function mjHash(want) {
+  if (location.hash !== want) history.replaceState(null, "", want);
+}
+
+function setMajlisTheme(theme) {
+  const box = $("#majlis");
+  for (const c of [...box.classList]) if (c.startsWith("mj-theme-")) box.classList.remove(c);
+  if (theme) box.classList.add(`mj-theme-${theme}`);
+}
+
+function showMajlisHome() {
+  mjSetPresent(false);
+  mj.lament = null;
+  const box = $("#majlis");
+  box.dataset.view = "home";
+  setMajlisTheme(null);
+  $("#mjHome").hidden = false;
+  $("#mjStage").hidden = true;
+  $("#mjPresent").hidden = true;
+  $("#mjCenter").replaceChildren();
+  $("#mjBarTitle").textContent = "Majlis";
+  if (!$("#mjList").childElementCount) buildMajlisList();
+  mjHash("#majlis");
+  document.title = "Majlis — Laments · Qur'an Reader";
+  box.scrollTop = 0;
+  $("#mjBack").focus({ preventScroll: true });
+}
+
+function buildMajlisList() {
+  const list = $("#mjList");
+  list.innerHTML = "";
+  for (const l of mj.doc.laments) {
+    const card = el("article", `mj-card mj-theme-${l.theme}`);
+    card.innerHTML = `
+      <svg class="mj-card-orn" aria-hidden="true"><use href="#mjRosette"/></svg>
+      <div class="mj-card-ar" lang="ar" dir="rtl">${escapeHtml(l.title_ar)}</div>
+      <h2 class="mj-card-title">${escapeHtml(l.title)}</h2>
+      ${l.by_ar ? `<div class="mj-card-by" lang="ar" dir="rtl">${escapeHtml(l.by_ar)}</div>` : ""}
+      <p class="mj-card-about">${escapeHtml(l.about)}</p>
+      <button class="mj-card-open">Open<span> · ${plural(l.verses.length, "verse")}</span></button>
+      <details class="mj-card-text">
+        <summary>Read the verses</summary>
+        <ol></ol>
+      </details>`;
+    card.querySelector(".mj-card-open").addEventListener("click", () => showLament(l, 0));
+    const ol = card.querySelector("ol");
+    l.verses.forEach((v, i) => {
+      const li = el("li");
+      const b = el("button", "mj-card-verse");
+      b.title = `Present from verse ${i + 1}`;
+      const block = (lines, cls, attrs) => lines?.length
+        ? `<span class="${cls}"${attrs}>${lines.map((t) => `<span class="mj-card-line">${escapeHtml(t)}</span>`).join("")}</span>` : "";
+      b.innerHTML = `<span class="mj-card-vn">Verse ${i + 1}</span>` +
+        block(v.ar, "mj-card-ar-lines", ' lang="ar" dir="rtl"') + block(v.en, "mj-card-en-lines", "");
+      b.addEventListener("click", () => showLament(l, i + 1));
+      li.appendChild(b);
+      ol.appendChild(li);
+    });
+    list.appendChild(card);
+  }
+}
+
+function showLament(l, at = 0) {
+  const box = $("#majlis");
+  const fresh = mj.lament !== l;
+  mj.lament = l;
+  box.dataset.view = "lament";
+  box.scrollTop = 0;
+  setMajlisTheme(l.theme);
+  $("#mjHome").hidden = true;
+  $("#mjStage").hidden = false;
+  $("#mjPresent").hidden = false;
+  $("#mjBarTitle").textContent = l.short || l.title;
+  if (fresh) {
+    const dots = $("#mjDots");
+    dots.innerHTML = "";
+    l.verses.forEach((_, i) => {
+      const d = el("button", "mj-dot");
+      d.dataset.at = String(i + 1);
+      d.setAttribute("aria-label", `Verse ${i + 1}`);
+      d.title = `Verse ${i + 1}`;
+      d.addEventListener("click", () => { d.blur(); mjGo(i + 1, i + 1 >= mj.at ? 1 : -1); });
+      dots.appendChild(d);
+    });
+  }
+  if (!$("#mjPetals").childElementCount) $("#mjPetals").innerHTML = majlisPetals();
+  if (!mjRO && typeof ResizeObserver !== "undefined") {
+    mjRO = new ResizeObserver(() => fitMajlis());
+    mjRO.observe($("#mjCenter"));
+  }
+  mjGo(at, 0);
+}
+
+function mjStep(dir) {
+  if (!mj.lament) return;
+  const to = mj.at + dir;
+  if (to < 0 || to > mj.lament.verses.length) return;
+  mjGo(to, dir);
+  const btn = $(dir > 0 ? "#mjNext" : "#mjPrev");
+  btn.classList.remove("mj-flash");
+  void btn.offsetWidth; // restart animation
+  btn.classList.add("mj-flash");
+}
+
+// at 0 is the title; 1… are the verses
+function mjGo(at, dir = 0) {
+  const l = mj.lament;
+  const n = l.verses.length;
+  at = Math.min(Math.max(at | 0, 0), n);
+  mj.at = at;
+  const slide = at ? lamentVerseSlide(l, at) : lamentTitleSlide(l);
+  if (dir) slide.classList.add(dir > 0 ? "mj-from-next" : "mj-from-prev");
+  $("#mjCenter").replaceChildren(slide);
+  $("#mjPrev").disabled = at === 0;
+  $("#mjNext").disabled = at === n;
+  for (const d of $("#mjDots").children) {
+    d.classList.toggle("on", +d.dataset.at === at);
+    d.classList.toggle("done", +d.dataset.at < at);
+  }
+  mjHash(at ? `#majlis/${l.id}/${at}` : `#majlis/${l.id}`);
+  document.title = `${l.short || l.title}${at ? ` · ${at} of ${n}` : ""} — Majlis · Qur'an Reader`;
+  fitMajlis();
+  document.fonts?.ready.then(() => fitMajlis()); // the italic and Arabic faces may still be on their way
+}
+
+// a hyphenated name (al-Zahra) shouldn't break at its hyphen
+const mjText = (t) => escapeHtml(t).replace(/\S+-\S+/g, (w) => `<span class="mj-nobr">${w}</span>`);
+const MJ_ORN = (cls) => `<svg class="${cls}" aria-hidden="true"><use href="#mjRosette"/></svg>`;
+
+function lamentTitleSlide(l) {
+  const s = el("div", "mj-slide mj-title-slide");
+  s.innerHTML = `
+    ${MJ_ORN("mj-orn")}
+    <div class="mj-title-ar" lang="ar" dir="rtl">${escapeHtml(l.title_ar)}</div>
+    <div class="mj-title-en">${mjText(l.title)}</div>
+    <div class="mj-rule" aria-hidden="true"></div>
+    <p class="mj-about">${mjText(l.about)}</p>
+    ${l.by_ar ? `<div class="mj-by" lang="ar" dir="rtl">${escapeHtml(l.by_ar)}</div>` : ""}
+    <div class="mj-hint">${plural(l.verses.length, "verse")} · Space, → or a tap for the first</div>`;
+  return s;
+}
+
+// A verse goes up line by line, each Arabic line with its English, in
+// pairs as the poem is recited; the refrain stays underneath for the
+// gathering to answer. fitMajlis() sets the English under its Arabic
+// (mj-stack) or beside it (mj-side), whichever lets the text be larger.
+function lamentVerseSlide(l, at) {
+  const s = el("div", "mj-slide mj-verse-slide");
+  const v = l.verses[at - 1];
+  const ar = v.ar || [], en = v.en || [];
+  const n = Math.max(ar.length, en.length);
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    rows.push(`<div class="mj-row${i && i % 2 === 0 ? " mj-pair" : ""}" style="--i:${i}">` +
+      (ar[i] ? `<p class="mj-line mj-ar" lang="ar" dir="rtl">${escapeHtml(ar[i])}</p>` : "") +
+      (en[i] ? `<p class="mj-line mj-en">${mjText(en[i])}</p>` : "") + "</div>");
+  }
+  s.innerHTML = `
+    <div class="mj-kicker">${MJ_ORN("mj-kicker-orn")}<span>Verse ${at}</span><span class="mj-kicker-of">of ${l.verses.length}</span></div>
+    <div class="mj-lines">${rows.join("")}</div>
+    ${l.refrain ? `<div class="mj-refrain" style="--i:${n}">${l.refrain_ar
+      ? `<span class="mj-refrain-ar" lang="ar" dir="rtl">${escapeHtml(l.refrain_ar)}</span>` : ""}<span class="mj-refrain-en">${mjText(l.refrain)}</span></div>` : ""}`;
+  return s;
+}
+
+// As fitLumStage does for a verse: scale the type (--mfit) to the largest
+// size that fits. A line of poetry reads best whole, so when keeping every
+// line on one row costs little size (a wide screen), that wins over
+// wrapping at the biggest size; on a narrow phone the lines wrap. All the
+// verses of a lament share one size and layout (the ones the largest verse
+// allows), so the text holds still from verse to verse while the gathering
+// reads. Each Arabic line keeps its English beneath it unless setting them
+// side by side (a phone on its side) makes the text clearly larger.
+function fitMajlis() {
+  requestAnimationFrame(() => {
+    const center = $("#mjCenter");
+    const slide = center.querySelector(".mj-slide");
+    if (!mj.open || !slide) return;
+    center.classList.remove("mj-scroll");
+    const cs = getComputedStyle(center);
+    const availH = center.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    if (availH <= 0) return;
+    let s;
+    if (slide.classList.contains("mj-verse-slide")) {
+      const key = `${mj.lament.id} ${slide.clientWidth}x${Math.round(availH)}`;
+      let pick = mjFitCache.get(key);
+      if (!pick) {
+        for (const kind of ["stack", "side"]) {
+          let k = MJ_FIT_MAX;
+          mj.lament.verses.forEach((_, i) => {
+            const probe = lamentVerseSlide(mj.lament, i + 1);
+            probe.classList.add("mj-probe", `mj-${kind}`);
+            probe.style.width = slide.clientWidth + "px";
+            center.appendChild(probe);
+            k = Math.min(k, fitSlide(probe, availH));
+            probe.remove();
+          });
+          if (!pick || k > pick.s * 1.1) pick = { kind, s: k };
+        }
+        mjFitCache.set(key, pick);
+      }
+      slide.classList.toggle("mj-side", pick.kind === "side");
+      s = pick.s;
+    } else {
+      s = fitSlide(slide, availH);
+    }
+    slide.style.setProperty("--mfit", s.toFixed(3));
+    // below the floor on a tiny screen: scroll as one piece
+    if (slide.offsetHeight > availH) center.classList.add("mj-scroll");
+  });
+}
+
+function fitSlide(slide, availH) {
+  const fits = (s) => {
+    slide.style.setProperty("--mfit", s.toFixed(3));
+    return slide.offsetHeight <= availH && slide.scrollWidth <= slide.clientWidth + 1;
+  };
+  const largest = (ok, lo, hi) => {
+    for (let i = 0; i < 10 && hi - lo > 0.01; i++) {
+      const mid = (lo + hi) / 2;
+      if (ok(mid)) lo = mid; else hi = mid;
+    }
+    return lo;
+  };
+  const range = document.createRange();
+  // rows a line runs to: its text's boxes, counted by where they start
+  const rows = () => [...slide.querySelectorAll(".mj-line")].map((p) => {
+    range.selectNodeContents(p);
+    const tops = [...range.getClientRects()].map((r) => r.top).sort((a, b) => a - b);
+    const gap = parseFloat(getComputedStyle(p).fontSize) * 0.6;
+    return tops.filter((y, i) => i === 0 || y - tops[i - 1] > gap).length;
+  }).join();
+  let s = fits(MJ_FIT_MAX) ? MJ_FIT_MAX : largest(fits, MJ_FIT_MIN, MJ_FIT_MAX);
+  if (slide.querySelector(".mj-line")) {
+    fits(MJ_FIT_MIN);
+    const narrowest = rows(); // the lines as they break at their own measure
+    const whole = (x) => fits(x) && rows() === narrowest;
+    if (!whole(s) && whole(MJ_FIT_MIN)) {
+      const w = largest(whole, MJ_FIT_MIN, s);
+      if (w >= s * 0.8) s = w;
+    }
+  }
+  return s;
+}
+
+// a few rose petals falling slowly behind the verse (theme zahra)
+function majlisPetals() {
+  if (!petalField) {
+    let seed = 11;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const out = [];
+    for (let i = 0; i < 14; i++) {
+      const side = rnd() < 0.5 ? -1 : 1;
+      out.push(`<i class="mj-petal" style="left:${(rnd() * 100).toFixed(1)}%;--s:${(7 + rnd() * 8).toFixed(1)}px;` +
+        `--d:${(20 + rnd() * 18).toFixed(1)}s;--dl:-${(rnd() * 38).toFixed(1)}s;--sw:${(side * (24 + rnd() * 70)).toFixed(0)}px;` +
+        `--sp:${(-side * (140 + rnd() * 260)).toFixed(0)}deg;--o:${(0.14 + rnd() * 0.24).toFixed(2)}"></i>`);
+    }
+    petalField = out.join("");
+  }
+  return petalField;
+}
+
+/* --- presenting: the whole screen, a wake lock, the controls fading when idle --- */
+
+function mjSetPresent(on) {
+  if (on === mj.presenting) return;
+  mj.presenting = on;
+  const box = $("#majlis");
+  box.classList.toggle("mj-presenting", on);
+  $("#mjPresent").setAttribute("aria-pressed", String(on));
+  $("#mjPresentLabel").textContent = on ? "Exit" : "Present";
+  $("#mjPresent").title = on ? "Leave the whole screen (P)" : "Present on the whole screen (P)";
+  if (on) {
+    const root = document.documentElement;
+    if (root.requestFullscreen && !document.fullscreenElement) {
+      root.requestFullscreen().catch(() => { /* still presenting, just not fullscreen (iPhone) */ });
+    }
+    mjWakeLock();
+    mjWake();
+  } else {
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    if (mj.lock) { mj.lock.release().catch(() => {}); mj.lock = null; }
+    clearTimeout(mj.idle);
+    box.classList.remove("mj-idle");
+  }
+}
+
+function mjWakeLock() {
+  if (!navigator.wakeLock || mj.lock) return;
+  navigator.wakeLock.request("screen").then((wl) => {
+    mj.lock = wl;
+    wl.addEventListener("release", () => { mj.lock = null; });
+  }).catch(() => { /* unsupported over plain http — fine */ });
+}
+
+// the bar, arrows and cursor come back on any movement and fade after a few idle seconds
+function mjWake() {
+  clearTimeout(mj.idle);
+  $("#majlis").classList.remove("mj-idle");
+  if (mj.presenting) mj.idle = setTimeout(() => { if (mj.presenting) $("#majlis").classList.add("mj-idle"); }, 3500);
+}
+
+function majlisKey(e) {
+  const target = e.target instanceof Element ? e.target : null;
+  if (target && target.matches("input, textarea, select")) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k === "Escape") {
+    if (mj.presenting) mjSetPresent(false);
+    else if (mj.lament) showMajlisHome();
+    else closeMajlis();
+    return;
+  }
+  if (!mj.lament) return; // the list scrolls as a page
+  if (target && target.matches("button, summary") && (k === " " || k === "Enter")) {
+    if (target.matches(".mj-step")) return; // it steps by itself
+    target.blur(); // a clicker's Space after pressing Present shouldn't press it again
+  }
+  let dir = 0;
+  if (k === " ") dir = e.shiftKey ? -1 : 1;
+  else if (["ArrowRight", "ArrowDown", "PageDown", "Enter"].includes(k)) dir = 1;
+  else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(k)) dir = -1;
+  if (dir) {
+    e.preventDefault();
+    mjStep(dir);
+  } else if (k === "Home") {
+    e.preventDefault();
+    mjGo(0, -1);
+  } else if (k === "End") {
+    e.preventDefault();
+    mjGo(mj.lament.verses.length, 1);
+  } else if (/^[1-9]$/.test(k) && +k <= mj.lament.verses.length) {
+    mjGo(+k, +k >= mj.at ? 1 : -1);
+  } else if (k === "p" || k === "P" || k === "f" || k === "F") {
+    mjSetPresent(!mj.presenting);
+  }
+}
+
+function bindMajlis() {
+  $("#sideMajlis").addEventListener("click", () => openMajlis());
+  $("#ldMajlis").addEventListener("click", (e) => openMajlis(e.currentTarget.dataset.lament));
+  $("#mjBack").addEventListener("click", () => {
+    if (mj.lament) showMajlisHome();
+    else closeMajlis();
+  });
+  $("#mjPresent").addEventListener("click", (e) => {
+    e.currentTarget.blur();
+    mjSetPresent(!mj.presenting);
+  });
+  $("#mjPrev").addEventListener("click", () => mjStep(-1));
+  $("#mjNext").addEventListener("click", () => mjStep(1));
+
+  // a tap on the verse steps: the left edge back, anywhere else on
+  const box = $("#majlis");
+  box.addEventListener("pointerdown", () => {
+    mj.wasIdle = box.classList.contains("mj-idle");
+    if (mj.presenting) mjWake();
+  });
+  box.addEventListener("pointermove", () => { if (mj.presenting) mjWake(); }, { passive: true });
+  box.addEventListener("click", (e) => {
+    if (!mj.lament || e.target.closest("button, a, summary, .mj-bar")) return;
+    // Faded controls stop taking taps, so a tap aimed at them lands here:
+    // that only brings them back.
+    if (mj.wasIdle) {
+      for (const part of [".mj-bar", ".mj-nav"]) {
+        const r = box.querySelector(part).getBoundingClientRect();
+        if (e.clientY >= r.top - 12 && e.clientY <= r.bottom + 12) return;
+      }
+    }
+    mjStep(e.clientX < window.innerWidth * 0.28 ? -1 : 1);
+  });
+  let swipeX = null, swipeY = null;
+  $("#mjStage").addEventListener("touchstart", (e) => {
+    swipeX = e.touches[0].clientX;
+    swipeY = e.touches[0].clientY;
+  }, { passive: true });
+  $("#mjStage").addEventListener("touchend", (e) => {
+    if (swipeX === null) return;
+    const dx = e.changedTouches[0].clientX - swipeX;
+    const dy = e.changedTouches[0].clientY - swipeY;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) mjStep(dx < 0 ? 1 : -1);
+    swipeX = null;
+  }, { passive: true });
+  window.addEventListener("resize", () => { if (mj.lament) fitMajlis(); });
+  // a face arriving late changes every measure
+  document.fonts?.addEventListener("loadingdone", () => { mjFitCache.clear(); if (mj.lament) fitMajlis(); });
+}
+
 /* ============================== landing page ============================== */
 
 let landingOpen = false;
@@ -2325,6 +2782,9 @@ function bindEvents() {
   $("#nrBack").addEventListener("click", () => closeRoom());
   $("#ldHotdMore").addEventListener("click", () => openRoom());
 
+  // the majlis
+  bindMajlis();
+
   // navigation
   $("#prevBtn").addEventListener("click", () => openSurah(settings.sura - 1));
   $("#nextBtn").addEventListener("click", () => openSurah(settings.sura + 1));
@@ -2341,6 +2801,7 @@ function bindEvents() {
 
   // keyboard
   document.addEventListener("keydown", (e) => {
+    if (mj.open) return majlisKey(e); // a page of its own, with its own keys
     if (e.key === "Escape") {
       if (!$("#jumpOverlay").hidden) return closeJump();
       if (!$("#settingsPanel").hidden) return ($("#settingsPanel").hidden = true);
@@ -2444,7 +2905,7 @@ function bindEvents() {
   $("#presentExit").addEventListener("click", () => setPresent(false));
   document.addEventListener("click", (e) => {
     if (!presenting || e.closedPanel) return;
-    if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, #narrRoom, #hadithPanel, button, a, input, select, .vb-foot")) return;
+    if (e.target.closest("#presentHud, #settingsPanel, #jumpOverlay, #narrRoom, #majlis, #hadithPanel, button, a, input, select, .vb-foot")) return;
     // Once faded, the HUD stops taking taps, so a tap aimed at its buttons
     // lands on the stage. Treat that as "show the controls", not "next verse".
     const hud = $("#presentHud").getBoundingClientRect();
@@ -2458,8 +2919,10 @@ function bindEvents() {
   window.addEventListener("pointerdown", () => { if (presenting) armHudHide(); }, { passive: true });
   document.addEventListener("fullscreenchange", () => {
     if (!document.fullscreenElement && presenting) setPresent(false);
+    if (!document.fullscreenElement && mj.presenting) mjSetPresent(false);
   });
   document.addEventListener("visibilitychange", () => {
+    if (mj.presenting && document.visibilityState === "visible") mjWakeLock();
     if (presenting && document.visibilityState === "visible" && !wakeLock && navigator.wakeLock) {
       navigator.wakeLock.request("screen").then((wl) => {
         wakeLock = wl;
@@ -2470,6 +2933,14 @@ function bindEvents() {
 
   // external hash edits (typing a deep link, another tab) navigate the reader
   window.addEventListener("hashchange", () => {
+    const mh = parseMajlisHash();
+    if (mh) {
+      const l = mj.open && mh.id && mj.lament?.id === mh.id;
+      if (l) { if (mh.at !== mj.at) mjGo(mh.at, mh.at > mj.at ? 1 : -1); }
+      else openMajlis(mh.id, mh.at);
+      return;
+    }
+    if (mj.open) closeMajlis(true);
     const nh = parseNarrHash();
     if (nh) { openRoom(nh.n); return; }
     const h = parseHash();

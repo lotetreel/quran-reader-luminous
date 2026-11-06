@@ -2342,3 +2342,547 @@ body.present #hadithPanel, body.present #hpBackdrop { display: none !important; 
 }
 .hn-actions button:hover, .hn-src[aria-expanded="true"] { border-color: var(--gold); color: var(--text); }
 .hn-refs { flex-basis: 100%; margin: 2px 0 0; font-size: 0.74rem; line-height: 1.55; color: var(--muted); }
+
+/* ============================================================
+   Majlis — laments to present at a gathering (#majlis), a page of
+   its own over the reader. Always dark: a mourning gathering, and a
+   projector or TV reads light text on dark best. Each lament names
+   a theme. .mj-theme-zahra, for Sayyida Fatimah al-Zahra: pearl and
+   dusty rose on a plum-black night, an eight-petalled rosette
+   (zahra: a blossom) and a few slow-falling rose petals.
+   ============================================================ */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+body.majlis-open { overflow: hidden; }
+body.majlis-open #progressBar { display: none; }
+#majlis {
+  --mj-bg-a: #16120f;
+  --mj-bg-b: #050404;
+  --mj-text: #efe7da;
+  --mj-muted: #ab9f8c;
+  --mj-faint: #6e655a;
+  --mj-accent: #d3a94f;
+  --mj-deep: #6e5320;
+  --mj-glow: #e9c77a;
+  --mj-line: rgba(239, 231, 218, 0.12);
+  --mj-surface: rgba(239, 231, 218, 0.045);
+  --mj-bar-h: 58px;
+  position: fixed; inset: 0;
+  z-index: 78; /* over the reader, the landing page and the narrations page; under the toast */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  background: radial-gradient(120% 90% at 50% 42%, var(--mj-bg-a), var(--mj-bg-b) 78%);
+  color: var(--mj-text);
+  font-family: var(--font-ui);
+  color-scheme: dark;
+}
+#majlis[hidden] { display: none; }
+#majlis[data-view="lament"] { overflow: hidden; }
+#majlis.mj-theme-zahra, .mj-theme-zahra {
+  --mj-bg-a: #1e0f18;
+  --mj-bg-b: #060304;
+  --mj-text: #f6eeea;
+  --mj-muted: #c4abb0;
+  --mj-faint: #82666d;
+  --mj-accent: #e7a9b7;
+  --mj-deep: #8c2c44;
+  --mj-glow: #f3c6d0;
+  --mj-line: rgba(246, 238, 234, 0.13);
+  --mj-surface: rgba(246, 238, 234, 0.05);
+}
+#majlis :focus-visible { outline-color: var(--mj-accent); }
+
+/* --- the scene behind: a breathing halo, the rosette, petals, a vignette --- */
+.mj-scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.mj-halo {
+  position: absolute; inset: -30%;
+  background: radial-gradient(30% 28% at 50% 46%, color-mix(in srgb, var(--mj-glow) 15%, transparent), transparent 72%);
+  filter: blur(40px);
+  animation: lumBreathe 10s ease-in-out infinite;
+}
+.mj-bg-rosette {
+  position: absolute; left: 50%; top: 47%;
+  width: min(120vmin, 1300px); height: min(120vmin, 1300px);
+  translate: -50% -50%;
+  color: var(--mj-accent);
+  stroke-width: 1px;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  animation: lumSpin 400s linear infinite;
+  /* clear in the middle, where the verse sits */
+  -webkit-mask-image: radial-gradient(circle, transparent 30%, #000 64%);
+  mask-image: radial-gradient(circle, transparent 30%, #000 64%);
+}
+#majlis[data-view="lament"] .mj-bg-rosette { opacity: 0.075; }
+.mj-petals { position: absolute; inset: 0; display: none; }
+#majlis.mj-theme-zahra[data-view="lament"] .mj-petals { display: block; }
+.mj-petal {
+  position: absolute; top: -4%;
+  width: var(--s); height: calc(var(--s) * 1.3);
+  border-radius: 0 85% 0 85%;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mj-accent) 80%, #fff), var(--mj-deep));
+  opacity: 0;
+  animation: mjFall var(--d) linear var(--dl) infinite;
+}
+.mj-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(95% 85% at 50% 46%, transparent 55%, rgba(0, 0, 0, 0.6));
+}
+
+/* --- top bar --- */
+.mj-bar {
+  position: sticky; top: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  height: var(--mj-bar-h);
+  padding: 0 12px;
+  padding-top: env(safe-area-inset-top);
+  box-sizing: content-box;
+  background: color-mix(in srgb, var(--mj-bg-b) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--mj-line);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+#majlis[data-view="lament"] .mj-bar {
+  position: absolute; left: 0; right: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mj-bg-b) 75%, transparent), transparent);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border-bottom: none;
+}
+.mj-back, .mj-present {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid transparent; border-radius: 999px;
+  background: transparent; color: var(--mj-text);
+  font-size: 0.9rem; font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.mj-back:hover { background: var(--mj-surface); }
+.mj-present {
+  padding: 8px 16px 8px 12px;
+  border-color: color-mix(in srgb, var(--mj-accent) 45%, transparent);
+  color: var(--mj-accent);
+}
+.mj-present:hover { background: color-mix(in srgb, var(--mj-accent) 12%, transparent); }
+.mj-present[hidden] { display: none; }
+.mj-bar-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mj-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* --- the list of laments --- */
+.mj-home {
+  position: relative; z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(24px, 6vh, 56px) 16px 56px;
+}
+.mj-home[hidden] { display: none; }
+.mj-hero { text-align: center; animation: fadeUp 0.5s ease both; }
+.mj-hero-orn, .mj-card-orn, .ld-mj-orn {
+  display: block;
+  color: var(--mj-accent);
+  stroke-width: 1.2px;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--mj-glow) 45%, transparent));
+}
+.mj-hero-orn { width: 54px; height: 54px; margin: 0 auto; }
+.mj-home-title {
+  margin: 6px 0 0;
+  font-family: var(--font-arabic);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 10vw, 4.2rem);
+  line-height: 1.5;
+  color: var(--mj-accent);
+  text-shadow: 0 0 40px color-mix(in srgb, var(--mj-glow) 25%, transparent);
+}
+.mj-home-sub {
+  font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--mj-muted);
+}
+.mj-home-intro {
+  max-width: 34rem;
+  margin: 16px auto 0;
+  font-family: var(--font-body);
+  font-size: 1.02rem; line-height: 1.7;
+  color: var(--mj-text); opacity: 0.82;
+}
+.mj-list { display: grid; gap: 18px; margin-top: clamp(28px, 6vh, 48px); }
+.mj-card {
+  position: relative;
+  padding: 28px clamp(18px, 5vw, 40px) 20px;
+  text-align: center;
+  border: 1px solid var(--mj-line);
+  border-radius: 24px;
+  background:
+    radial-gradient(110% 80% at 50% 0%, color-mix(in srgb, var(--mj-deep) 32%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--mj-bg-a), var(--mj-bg-b));
+  color: var(--mj-text);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  animation: fadeUp 0.6s ease 0.1s both;
+}
+.mj-card-orn { width: 42px; height: 42px; margin: 0 auto; }
+.mj-card-ar {
+  font-family: var(--font-arabic);
+  font-size: clamp(2.4rem, 9vw, 3.4rem);
+  line-height: 1.5;
+  color: var(--mj-accent);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--mj-glow) 30%, transparent);
+}
+.mj-card-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400; font-style: italic;
+  font-size: clamp(1.25rem, 4.4vw, 1.6rem);
+  line-height: 1.35;
+}
+.mj-card-by {
+  margin-top: 4px;
+  font-family: var(--font-arabic);
+  font-size: 1.1rem; line-height: 1.7;
+  color: color-mix(in srgb, var(--mj-text) 78%, var(--mj-accent));
+}
+.mj-card-about {
+  max-width: 30rem;
+  margin: 8px auto 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem; line-height: 1.6;
+  color: var(--mj-muted);
+}
+.mj-card-open {
+  margin-top: 20px;
+  min-height: 50px;
+  padding: 10px 30px;
+  border: 1px solid var(--mj-accent);
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mj-accent) 90%, #fff), color-mix(in srgb, var(--mj-accent) 82%, var(--mj-deep)));
+  color: #261019;
+  font-size: 1rem; font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--mj-deep) 45%, transparent);
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+.mj-card-open:hover { filter: brightness(1.06); }
+.mj-card-open:active { transform: scale(0.97); }
+.mj-card-open span { font-weight: 600; opacity: 0.72; }
+.mj-card-text { margin-top: 16px; text-align: start; }
+.mj-card-text summary {
+  display: flex; justify-content: center;
+  padding: 8px;
+  list-style: none;
+  font-size: 0.84rem; font-weight: 600;
+  color: var(--mj-muted);
+  cursor: pointer;
+}
+.mj-card-text summary::-webkit-details-marker { display: none; }
+.mj-card-text summary::after { content: "›"; margin-left: 6px; transition: transform 0.2s ease; }
+.mj-card-text[open] summary::after { transform: rotate(90deg); }
+.mj-card-text summary:hover { color: var(--mj-text); }
+.mj-card-text ol { display: grid; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.mj-card-verse {
+  display: block; width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--mj-line);
+  border-radius: 14px;
+  background: var(--mj-surface);
+  color: var(--mj-text);
+  font-family: var(--font-body);
+  font-size: 0.95rem; line-height: 1.6;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.mj-card-verse:hover { border-color: color-mix(in srgb, var(--mj-accent) 55%, transparent); }
+.mj-card-vn {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-ui);
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--mj-accent);
+}
+.mj-card-ar-lines, .mj-card-en-lines, .mj-card-line { display: block; }
+.mj-card-ar-lines { font-family: var(--font-arabic); font-size: 1.3rem; line-height: 1.8; }
+.mj-card-ar-lines + .mj-card-en-lines { margin-top: 10px; color: var(--mj-muted); }
+.mj-card-line:nth-child(2n + 3) { margin-top: 0.4em; } /* the second pair of lines */
+
+/* --- the stage: one verse at a time --- */
+.mj-stage {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column;
+  padding-top: calc(var(--mj-bar-h) + env(safe-area-inset-top));
+}
+.mj-stage[hidden] { display: none; }
+#majlis.mj-presenting .mj-stage { padding-top: max(16px, env(safe-area-inset-top)); }
+.mj-center {
+  position: relative;
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px clamp(18px, 6vw, 110px) 4px;
+  overflow: hidden;
+}
+#majlis.mj-presenting .mj-center { padding-inline: clamp(16px, 4.5vw, 120px); }
+.mj-center.mj-scroll { overflow-y: auto; align-items: flex-start; }
+.mj-slide {
+  --mfit: 1;
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+/* a verse measured out of sight, to find the size all the verses share */
+.mj-probe { position: absolute; top: 0; left: 0; visibility: hidden; pointer-events: none; }
+.mj-probe, .mj-probe * { animation: none !important; }
+.mj-nobr { white-space: nowrap; }
+.mj-slide.mj-from-next { animation: lumFromNext 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+.mj-slide.mj-from-prev { animation: lumFromPrev 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+
+/* the title */
+.mj-orn {
+  width: calc(54px * var(--mfit)); height: calc(54px * var(--mfit));
+  color: var(--mj-accent);
+  stroke-width: 1.3px;
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--mj-glow) 55%, transparent));
+  animation: mjIn 1.1s ease both;
+}
+.mj-title-ar {
+  font-family: var(--font-arabic);
+  font-size: calc(3.6rem * var(--mfit));
+  line-height: 1.55;
+  color: var(--mj-accent);
+  text-shadow: 0 0 0.6em color-mix(in srgb, var(--mj-glow) 35%, transparent);
+  animation: mjIn 1.2s ease 0.15s both;
+}
+.mj-title-en {
+  text-wrap: balance;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: calc(1.6rem * var(--mfit));
+  line-height: 1.3;
+  animation: mjIn 1.1s ease 0.45s both;
+}
+.mj-rule {
+  width: calc(130px * var(--mfit)); height: 1px;
+  margin: calc(18px * var(--mfit)) auto;
+  background: linear-gradient(90deg, transparent, var(--mj-accent), transparent);
+  animation: mjIn 1s ease 0.65s both;
+}
+.mj-about {
+  max-width: 28em;
+  text-wrap: balance;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: calc(1rem * var(--mfit));
+  line-height: 1.6;
+  color: var(--mj-muted);
+  animation: mjIn 1s ease 0.8s both;
+}
+.mj-by {
+  margin-top: calc(14px * var(--mfit));
+  font-family: var(--font-arabic);
+  font-size: calc(1.3rem * var(--mfit));
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--mj-text) 78%, var(--mj-accent));
+  animation: mjIn 1s ease 0.95s both;
+}
+.mj-hint {
+  margin-top: calc(22px * var(--mfit));
+  font-size: 0.72rem; /* for whoever is setting up, not the room: it stays small */
+  font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--mj-faint);
+  animation: mjIn 1s ease 1.2s both;
+}
+#majlis.mj-presenting .mj-hint { display: none; } /* the gathering doesn't need the keys */
+
+/* a verse */
+.mj-kicker {
+  display: inline-flex; align-items: center; gap: 0.7em;
+  margin-bottom: calc(20px * var(--mfit));
+  font-size: calc(0.76rem * var(--mfit));
+  font-weight: 700;
+  letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--mj-accent);
+  animation: mjIn 0.8s ease both;
+}
+.mj-kicker-orn { width: 1.5em; height: 1.5em; stroke-width: 1.1px; }
+.mj-kicker-of { color: var(--mj-faint); letter-spacing: 0.18em; }
+/* stacked (the default): each Arabic line with its English beneath, in pairs */
+.mj-lines {
+  width: 100%;
+  max-width: calc(46rem * var(--mfit)); /* grows with the type, so lines keep their breaks as it scales */
+}
+.mj-row {
+  animation: mjIn 1s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(180ms + var(--i) * 320ms);
+}
+.mj-row + .mj-row { margin-top: calc(0.95rem * var(--mfit)); }
+.mj-row.mj-pair { margin-top: calc(2rem * var(--mfit)); }
+.mj-line {
+  margin: 0;
+  text-wrap: balance;
+  text-shadow: 0 0 0.7em rgba(0, 0, 0, 0.65);
+}
+.mj-ar {
+  font-family: var(--font-arabic);
+  font-size: calc(2.05rem * var(--mfit));
+  line-height: 1.7;
+}
+.mj-en {
+  font-family: var(--font-body);
+  font-size: calc(1.2rem * var(--mfit));
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--mj-text) 76%, var(--mj-muted));
+}
+/* side by side (a short, wide screen): the English and its Arabic on one
+   row, each leaning in towards the middle */
+.mj-side .mj-lines { max-width: calc(84rem * var(--mfit)); }
+.mj-side .mj-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: calc(2.4rem * var(--mfit));
+}
+.mj-side .mj-row + .mj-row { margin-top: calc(0.4rem * var(--mfit)); }
+.mj-side .mj-row.mj-pair { margin-top: calc(1.3rem * var(--mfit)); }
+.mj-side .mj-en { grid-column: 1; grid-row: 1; text-align: end; }
+.mj-side .mj-ar { grid-column: 2; grid-row: 1; text-align: end; } /* the end of a right-to-left line is its left */
+.mj-refrain {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center;
+  gap: 0.15em 0.7em;
+  min-width: min(100%, 18em);
+  margin-top: calc(26px * var(--mfit));
+  padding-top: calc(12px * var(--mfit));
+  background: linear-gradient(90deg, transparent, var(--mj-line) 25%, var(--mj-line) 75%, transparent) top / 100% 1px no-repeat;
+  font-size: calc(0.95rem * var(--mfit));
+  animation: mjIn 1s ease both;
+  animation-delay: calc(450ms + var(--i) * 300ms);
+}
+.mj-refrain-ar { font-family: var(--font-arabic); font-size: 1.45em; line-height: 1.5; color: var(--mj-accent); }
+.mj-refrain-en { font-family: var(--font-body); font-style: italic; color: var(--mj-muted); }
+
+/* --- verse navigation --- */
+.mj-nav {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: min(94%, 720px);
+  margin: 0 auto;
+  padding: 6px 0 max(16px, env(safe-area-inset-bottom));
+}
+.mj-step {
+  width: 52px; height: 52px;
+  flex: none;
+  display: grid; place-items: center;
+  border: 1px solid var(--mj-line);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mj-bg-a) 70%, transparent);
+  color: var(--mj-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, opacity 0.45s ease, transform 0.12s ease;
+}
+.mj-step .icon { width: 22px; height: 22px; }
+.mj-step:hover { border-color: var(--mj-accent); color: var(--mj-accent); }
+.mj-step:active { transform: scale(0.94); }
+.mj-step:disabled { opacity: 0.25; pointer-events: none; }
+.mj-step.mj-flash { animation: mjFlash 0.5s ease; }
+.mj-dots { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; transition: opacity 0.45s ease; }
+.mj-dot {
+  display: grid; place-items: center;
+  width: 28px; height: 34px;
+  padding: 0;
+  border: none; background: none;
+  cursor: pointer;
+}
+.mj-dot::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: 99px;
+  background: var(--mj-faint);
+  opacity: 0.75;
+  transition: width 0.35s ease, background 0.35s ease, opacity 0.35s ease, box-shadow 0.35s ease;
+}
+.mj-dot:hover::before { opacity: 1; }
+.mj-dot.done::before { background: color-mix(in srgb, var(--mj-accent) 50%, var(--mj-faint)); }
+.mj-dot.on::before {
+  width: 22px;
+  background: var(--mj-accent);
+  opacity: 1;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--mj-glow) 60%, transparent);
+}
+
+/* --- presenting: the controls fade after a few idle seconds --- */
+#majlis.mj-presenting .mj-step { opacity: 0.6; }
+#majlis.mj-presenting .mj-step:hover { opacity: 1; }
+#majlis.mj-idle .mj-bar { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+#majlis.mj-idle .mj-step { opacity: 0; pointer-events: none; }
+#majlis.mj-idle .mj-dots { opacity: 0.4; }
+#majlis.mj-idle, #majlis.mj-idle * { cursor: none; }
+
+/* phones on their side and other short screens: a slimmer bar leaves the verse more room */
+@media (max-height: 520px) {
+  #majlis { --mj-bar-h: 46px; }
+  .mj-nav { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .mj-step { width: 42px; height: 42px; }
+}
+@media (max-width: 480px) {
+  .mj-bar-title { display: none; }
+}
+
+@keyframes mjIn {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes mjFall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  12% { opacity: var(--o); }
+  50% { transform: translate3d(var(--sw), 55vh, 0) rotate(calc(var(--sp) * 0.5)); }
+  88% { opacity: var(--o); }
+  100% { transform: translate3d(0, 110vh, 0) rotate(var(--sp)); opacity: 0; }
+}
+@keyframes mjFlash {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--mj-accent) 50%, transparent); border-color: var(--mj-accent); color: var(--mj-accent); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mj-slide, .mj-slide * { animation-delay: 0ms !important; animation-duration: 0.01ms !important; }
+  .mj-halo, .mj-bg-rosette { animation: none !important; }
+  .mj-petals { display: none !important; }
+}
+
+/* --- the landing page's way in: a small window onto the majlis --- */
+.ld-majlis {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px;
+  width: 100%; max-width: 720px;
+  margin: 16px auto 0;
+  padding: 18px clamp(16px, 4vw, 28px);
+  border: 1px solid var(--mj-line);
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 160% at 0% 50%, color-mix(in srgb, var(--mj-deep) 38%, transparent), transparent 60%),
+    linear-gradient(135deg, var(--mj-bg-a), var(--mj-bg-b));
+  color: var(--mj-text);
+  font-family: var(--font-ui);
+  text-align: start;
+  cursor: pointer;
+  box-shadow: 0 14px 40px rgba(30, 8, 18, 0.28);
+  animation: fadeUp 0.6s ease 0.2s both;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+.ld-majlis:hover { border-color: color-mix(in srgb, var(--mj-accent) 55%, transparent); }
+.ld-majlis:active { transform: scale(0.985); }
+.ld-mj-orn { width: 46px; height: 46px; }
+.ld-mj-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ld-majlis .ld-label { color: var(--mj-muted); }
+.ld-mj-title {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5em;
+  font-family: var(--font-body); font-style: italic;
+  font-size: 1.2rem;
+}
+.ld-mj-ar { font-family: var(--font-arabic); font-style: normal; font-size: 1.75rem; line-height: 1.35; color: var(--mj-accent); }
+.ld-mj-sub { font-size: 0.82rem; line-height: 1.45; color: var(--mj-muted); }
+.ld-mj-chev { font-size: 1.6rem; color: var(--mj-accent); }
