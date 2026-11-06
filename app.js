@@ -128,7 +128,7 @@ async function init() {
   // and the installed app (#continue) go straight to reading
   if (!location.hash) showLanding();
   if (room) openRoom(room.n); // before the surah, so its hash isn't replaced
-  if (majlis) openMajlis(majlis.id, majlis.at);
+  if (majlis) openMajlis(majlis.id, majlis.at, majlis.chorus);
   // someone who studies with the panel open on a wide screen finds it open again
   if (settings.hOpen && settings.hadith && window.innerWidth >= HP_DOCK_MIN) {
     hp.open = true;
@@ -2075,12 +2075,13 @@ async function shareHadith(e) {
 /* ============================== majlis ==============================
    Laments (latmiyyat) to put on a screen at a gathering, one verse at a
    time while the reciter recites. They live in data/majlis/laments.json;
-   #majlis lists them, #majlis/ya-zahra opens one on its title and
-   #majlis/ya-zahra/3 at its third verse. Each lament names a theme
+   #majlis lists them, #majlis/ya-zahra opens one on its title,
+   #majlis/ya-zahra/3 at its third verse and #majlis/ya-zahra/chorus-3 on
+   the chorus before it. Each lament names a theme
    (.mj-theme-zahra in styles.css). A page of its own over the reader,
    like the narrations page, with its own present mode, keys and wake lock. */
 
-const mj = { doc: null, load: null, open: false, lament: null, at: 0, presenting: false, lock: null, idle: 0, wasIdle: false };
+const mj = { doc: null, load: null, open: false, lament: null, slides: [], pos: 0, presenting: false, lock: null, idle: 0, wasIdle: false };
 const MAJLIS_COLOR = "#0a0507";
 const MJ_FIT_MIN = 0.5, MJ_FIT_MAX = 3.2;
 const mjFitCache = new Map(); // lament + stage size -> the size its verses share
@@ -2098,11 +2099,12 @@ function loadLaments() {
 }
 
 function parseMajlisHash() {
-  const m = (location.hash || "").match(/^#majlis(?:\/([a-z0-9-]+)(?:\/(\d{1,2}))?)?$/);
-  return m ? { id: m[1] || null, at: m[2] ? +m[2] : 0 } : null;
+  const m = (location.hash || "").match(/^#majlis(?:\/([a-z0-9-]+)(?:\/(chorus-)?(\d{1,2}))?)?$/);
+  return m ? { id: m[1] || null, at: m[3] ? +m[3] : 0, chorus: !!m[2] } : null;
 }
 
-async function openMajlis(id = null, at = 0) {
+// at: a verse number (0 for the title); chorus: the chorus before that verse
+async function openMajlis(id = null, at = 0, chorus = false) {
   if (!mj.doc) {
     try { await loadLaments(); } catch {
       showToast("The majlis needs a connection the first time");
@@ -2118,7 +2120,7 @@ async function openMajlis(id = null, at = 0) {
   $("#majlis").hidden = false;
   document.querySelector('meta[name="theme-color"]').content = MAJLIS_COLOR;
   const lament = id && mj.doc.laments.find((l) => l.id === id);
-  if (lament) showLament(lament, at);
+  if (lament) showLament(lament, at, chorus);
   else showMajlisHome();
 }
 
@@ -2200,7 +2202,7 @@ function buildMajlisList() {
   }
 }
 
-function showLament(l, at = 0) {
+function showLament(l, at = 0, chorus = false) {
   const box = $("#majlis");
   const fresh = mj.lament !== l;
   mj.lament = l;
@@ -2212,6 +2214,7 @@ function showLament(l, at = 0) {
   $("#mjPresent").hidden = false;
   $("#mjBarTitle").textContent = l.short || l.title;
   if (fresh) {
+    mj.slides = lamentSlides(l);
     const dots = $("#mjDots");
     dots.innerHTML = "";
     l.verses.forEach((_, i) => {
@@ -2219,7 +2222,11 @@ function showLament(l, at = 0) {
       d.dataset.at = String(i + 1);
       d.setAttribute("aria-label", `Verse ${i + 1}`);
       d.title = `Verse ${i + 1}`;
-      d.addEventListener("click", () => { d.blur(); mjGo(i + 1, i + 1 >= mj.at ? 1 : -1); });
+      d.addEventListener("click", () => {
+        d.blur();
+        const to = mjPosOf(i + 1);
+        mjGo(to, to >= mj.pos ? 1 : -1);
+      });
       dots.appendChild(d);
     });
   }
@@ -2228,13 +2235,29 @@ function showLament(l, at = 0) {
     mjRO = new ResizeObserver(() => fitMajlis());
     mjRO.observe($("#mjCenter"));
   }
-  mjGo(at, 0);
+  mjGo(mjPosOf(at, chorus), 0);
+}
+
+// The title, then each verse; a lament with a chorus (chorus_ar) has it on
+// a slide of its own before every verse, for the gathering to answer.
+function lamentSlides(l) {
+  const slides = [{ kind: "title", verse: 0 }];
+  l.verses.forEach((_, i) => {
+    if (l.chorus_ar) slides.push({ kind: "chorus", verse: i + 1 });
+    slides.push({ kind: "verse", verse: i + 1 });
+  });
+  return slides;
+}
+
+function mjPosOf(at, chorus = false) {
+  const i = mj.slides.findIndex((s) => s.verse === at && (s.kind === "chorus") === chorus);
+  return i >= 0 ? i : chorus ? mjPosOf(at) : 0;
 }
 
 function mjStep(dir) {
   if (!mj.lament) return;
-  const to = mj.at + dir;
-  if (to < 0 || to > mj.lament.verses.length) return;
+  const to = mj.pos + dir;
+  if (to < 0 || to >= mj.slides.length) return;
   mjGo(to, dir);
   const btn = $(dir > 0 ? "#mjNext" : "#mjPrev");
   btn.classList.remove("mj-flash");
@@ -2242,23 +2265,24 @@ function mjStep(dir) {
   btn.classList.add("mj-flash");
 }
 
-// at 0 is the title; 1… are the verses
-function mjGo(at, dir = 0) {
+function mjGo(pos, dir = 0) {
   const l = mj.lament;
   const n = l.verses.length;
-  at = Math.min(Math.max(at | 0, 0), n);
-  mj.at = at;
-  const slide = at ? lamentVerseSlide(l, at) : lamentTitleSlide(l);
+  pos = Math.min(Math.max(pos | 0, 0), mj.slides.length - 1);
+  mj.pos = pos;
+  const { kind, verse: at } = mj.slides[pos];
+  const slide = kind === "verse" ? lamentVerseSlide(l, at) : kind === "chorus" ? lamentChorusSlide(l) : lamentTitleSlide(l);
   if (dir) slide.classList.add(dir > 0 ? "mj-from-next" : "mj-from-prev");
   $("#mjCenter").replaceChildren(slide);
-  $("#mjPrev").disabled = at === 0;
-  $("#mjNext").disabled = at === n;
+  $("#mjPrev").disabled = pos === 0;
+  $("#mjNext").disabled = pos === mj.slides.length - 1;
   for (const d of $("#mjDots").children) {
-    d.classList.toggle("on", +d.dataset.at === at);
+    d.classList.toggle("on", kind === "verse" && +d.dataset.at === at);
     d.classList.toggle("done", +d.dataset.at < at);
   }
-  mjHash(at ? `#majlis/${l.id}/${at}` : `#majlis/${l.id}`);
-  document.title = `${l.short || l.title}${at ? ` · ${at} of ${n}` : ""} — Majlis · Qur'an Reader`;
+  mjHash(`#majlis/${l.id}` + (kind === "verse" ? `/${at}` : kind === "chorus" ? `/chorus-${at}` : ""));
+  const where = kind === "verse" ? ` · ${at} of ${n}` : kind === "chorus" ? " · chorus" : "";
+  document.title = `${l.short || l.title}${where} — Majlis · Qur'an Reader`;
   fitMajlis();
   document.fonts?.ready.then(() => fitMajlis()); // the italic and Arabic faces may still be on their way
 }
@@ -2276,13 +2300,25 @@ function lamentTitleSlide(l) {
     <div class="mj-rule" aria-hidden="true"></div>
     <p class="mj-about">${mjText(l.about)}</p>
     ${l.by_ar ? `<div class="mj-by" lang="ar" dir="rtl">${escapeHtml(l.by_ar)}</div>` : ""}
-    <div class="mj-hint">${plural(l.verses.length, "verse")} · Space, → or a tap for the first</div>`;
+    <div class="mj-hint">${plural(l.verses.length, "verse")}${l.chorus_ar ? ", the chorus before each" : ""} · Space, → or a tap to begin</div>`;
+  return s;
+}
+
+// The chorus fills the screen between the verses: its Arabic lines one
+// under another, each brightening in turn, and the English beneath.
+function lamentChorusSlide(l) {
+  const s = el("div", "mj-slide mj-chorus-slide");
+  s.innerHTML = `
+    ${MJ_ORN("mj-orn mj-chorus-orn")}
+    <div class="mj-chorus-ar" lang="ar" dir="rtl">${l.chorus_ar.map((t, k) =>
+      `<span style="--k:${k}">${escapeHtml(t)}</span>`).join("")}</div>
+    ${l.refrain ? `<div class="mj-chorus-en">${mjText(l.refrain)}</div>` : ""}`;
   return s;
 }
 
 // A verse goes up line by line, each Arabic line with its English, in
-// pairs as the poem is recited; the refrain stays underneath for the
-// gathering to answer. fitMajlis() sets the English under its Arabic
+// pairs as the poem is recited. Without chorus slides, the refrain stays
+// underneath for the gathering to answer. fitMajlis() sets the English under its Arabic
 // (mj-stack) or beside it (mj-side), whichever lets the text be larger.
 function lamentVerseSlide(l, at) {
   const s = el("div", "mj-slide mj-verse-slide");
@@ -2298,7 +2334,7 @@ function lamentVerseSlide(l, at) {
   s.innerHTML = `
     <div class="mj-kicker">${MJ_ORN("mj-kicker-orn")}<span>Verse ${at}</span><span class="mj-kicker-of">of ${l.verses.length}</span></div>
     <div class="mj-lines">${rows.join("")}</div>
-    ${l.refrain ? `<div class="mj-refrain" style="--i:${n}">${l.refrain_ar
+    ${l.refrain && !l.chorus_ar ? `<div class="mj-refrain" style="--i:${n}">${l.refrain_ar
       ? `<span class="mj-refrain-ar" lang="ar" dir="rtl">${escapeHtml(l.refrain_ar)}</span>` : ""}<span class="mj-refrain-en">${mjText(l.refrain)}</span></div>` : ""}`;
   return s;
 }
@@ -2468,9 +2504,10 @@ function majlisKey(e) {
     mjGo(0, -1);
   } else if (k === "End") {
     e.preventDefault();
-    mjGo(mj.lament.verses.length, 1);
+    mjGo(mj.slides.length - 1, 1);
   } else if (/^[1-9]$/.test(k) && +k <= mj.lament.verses.length) {
-    mjGo(+k, +k >= mj.at ? 1 : -1);
+    const to = mjPosOf(+k);
+    mjGo(to, to >= mj.pos ? 1 : -1);
   } else if (k === "p" || k === "P" || k === "f" || k === "F") {
     mjSetPresent(!mj.presenting);
   }
@@ -2936,8 +2973,10 @@ function bindEvents() {
     const mh = parseMajlisHash();
     if (mh) {
       const l = mj.open && mh.id && mj.lament?.id === mh.id;
-      if (l) { if (mh.at !== mj.at) mjGo(mh.at, mh.at > mj.at ? 1 : -1); }
-      else openMajlis(mh.id, mh.at);
+      if (l) {
+        const to = mjPosOf(mh.at, mh.chorus);
+        if (to !== mj.pos) mjGo(to, to > mj.pos ? 1 : -1);
+      } else openMajlis(mh.id, mh.at, mh.chorus);
       return;
     }
     if (mj.open) closeMajlis(true);

@@ -9,7 +9,7 @@
       "by_ar": "السيد احمد عبدالله العبدالمحسن",
       "about": "An English translation of the lament for Lady Fatimah al-Zahra (peace be upon her).",
       "refrain": "O Zahra, O Zahra, O Zahra",
-      "refrain_ar": "يا زهراء يا زهراء يا زهراء",
+      "chorus_ar": ["يا زهراء", "يا زهراء", "يا زهراء"],
       "verses": [
         {
           "ar": [

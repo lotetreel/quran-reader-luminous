@@ -145,8 +145,9 @@ end-of-surah pool and the narration-of-the-day pool.
 **Majlis** in the chapter list (or the card on the landing page, or
 `#majlis`) is a section of its own for a gathering: a lament goes up on a
 screen one verse at a time while the reciter recites. Each verse shows the
-original Arabic line by line with its English, and the refrain underneath for
-the gathering to answer. The first is *Ya Zahra* (`#majlis/ya-zahra`), the
+original Arabic line by line with its English. Before every verse the chorus
+gets a slide of its own (يا زهراء three times, large) for the gathering to
+answer. The first is *Ya Zahra* (`#majlis/ya-zahra`), the
 lament for Lady Fatimah al-Zahra (peace be upon her) by السيد احمد عبدالله
 العبدالمحسن, themed for her: pearl and dusty rose on a plum-black night, an
 eight-petalled rosette (zahra: a blossom) and a few slow-falling petals.
@@ -156,7 +157,8 @@ eight-petalled rosette (zahra: a blossom) and a few slow-falling petals.
 - Next: Space, →, Page Down (a presentation clicker), Enter, a tap, or a
   swipe. Back: Shift+Space, ←, Page Up, or a tap near the left edge.
   `Home` is the title, `End` the last verse, `1`–`9` a verse. Esc leaves.
-- A deep link opens a verse directly: `#majlis/ya-zahra/3`.
+- A deep link opens a verse directly: `#majlis/ya-zahra/3`, or the chorus
+  before it: `#majlis/ya-zahra/chorus-3`. The number keys go to verses.
 - The text is sized to fill the screen, and every verse of a lament shares
   one size so it holds still from verse to verse. On a tall screen each
   Arabic line has its English beneath it. On a short, wide one (a phone on
@@ -166,8 +168,11 @@ eight-petalled rosette (zahra: a blossom) and a few slow-falling petals.
   present from there.
 
 The laments are `data/majlis/laments.json`. To add one, add an entry with an
-`id` (its address), `title` / `title_ar`, `by_ar`, `about`, `refrain` /
-`refrain_ar`, `theme`, and `verses` (each `{"ar": [lines], "en": [lines]}`).
+`id` (its address), `title` / `title_ar`, `by_ar`, `about`, `refrain` (the
+chorus in English), `chorus_ar` (its Arabic lines; with it, the chorus gets a
+slide before each verse, and without it, `refrain_ar` and `refrain` show in a
+small line under each verse), `theme`, and `verses` (each `{"ar": [lines],
+"en": [lines]}`).
 The theme is a class in `styles.css` (`.mj-theme-zahra`); a lament with
 another theme name gets the plain mourning palette until one is written.
 
