@@ -8,7 +8,7 @@
 const VERSION = "v1";
 const SHELL = `shell-${VERSION}`;
 const DATA = `data-${VERSION}`;
-const SHELL_FILES = ["./", "index.html", "app.js", "styles.css", "fonts/fonts.css", "manifest.webmanifest", "data/manifest.json", "data/narrations/quran.json"];
+const SHELL_FILES = ["./", "index.html", "app.js", "styles.css", "fonts/fonts.css", "manifest.webmanifest", "data/manifest.json", "data/narrations/quran.json", "data/majlis/laments.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {

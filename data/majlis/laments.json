@@ -1,0 +1,87 @@
+{
+  "laments": [
+    {
+      "id": "ya-zahra",
+      "theme": "zahra",
+      "title": "O Zahra, O Zahra, O Zahra",
+      "short": "O Zahra",
+      "title_ar": "يا زهراء",
+      "by_ar": "السيد احمد عبدالله العبدالمحسن",
+      "about": "An English translation of the lament for Lady Fatimah al-Zahra (peace be upon her).",
+      "refrain": "O Zahra, O Zahra, O Zahra",
+      "refrain_ar": "يا زهراء يا زهراء يا زهراء",
+      "verses": [
+        {
+          "ar": [
+            "قَلبُنا يَبكِيكِ يا بِنتَ الرَّسولِ",
+            "يَنظِرُ الْمِسمَارَ في ضلعِ الْبَتولِ",
+            "آهِ يَدعو بِفتِجاعٍ و ذُهُولِ",
+            "كَيفَ جَاءُوا آهِ يا فِضَةُ قُولِي"
+          ],
+          "en": [
+            "Our hearts weep for you, O daughter of the Messenger,",
+            "As they behold the nail piercing the rib of the Pure Lady.",
+            "Alas! They cry out in anguish and disbelief,",
+            "How could they have come to this? O Fiddah, tell me!"
+          ]
+        },
+        {
+          "ar": [
+            "فَأجابت تَلطمُ الرَّأسَ وتَنعى",
+            "قد أتى رِجسٌ وأدمَى مِنْهَا ضِلعَا",
+            "وجَنينَاً أسقطوهُ يُجرِي دَمعَا",
+            "وبِدمٍ أسفَكوهُ سَنُوا شَرعا"
+          ],
+          "en": [
+            "Fiddah replied, striking her head in mourning and lamentation:",
+            "An impure wretch came and wounded her rib,",
+            "And they caused her unborn child to miscarry, bringing tears of grief.",
+            "And through the blood they spilled, they established a precedent."
+          ]
+        },
+        {
+          "ar": [
+            "ذَلِكَ الْمِسمَار أبكى قَلبَ زَينَب",
+            "في سَماءِ الْمُصطفى قد جَاءَ يَلهَب",
+            "حَامياً ويلاهُ في صَدرٍ تَخضَب",
+            "وبِسوطٍ لاهبٍ ويلاهُ تُضرَب"
+          ],
+          "en": [
+            "That very nail made Zaynab’s heart weep,",
+            "Beneath the heavens of the Chosen Prophet, it came burning fiercely.",
+            "Scorching hot — alas! — against a chest stained with blood,",
+            "And with a blazing whip — alas! — she was struck."
+          ]
+        },
+        {
+          "ar": [
+            "إنها خَيرُ نِساءِ الْعَالمِينا",
+            "إنها سِرُ أمِيرِ الْمُؤمنِينا",
+            "إنها نَبعُ عَطاءِ السَّائِلينا",
+            "كَيفَ قَد يُعلاَ لها الْيومَ أنِينا"
+          ],
+          "en": [
+            "She is the greatest of all the women of the worlds,",
+            "She is the innermost secret of the Commander of the Faithful.",
+            "She is the fountain of generosity for all who seek,",
+            "How could her cries of pain be raised today?"
+          ]
+        },
+        {
+          "ar": [
+            "في دِيارِ الْمُصطَفى اللهُ يَشهَد",
+            "كَسرٌ بابٍ في الْمَعَالي قَد تَمجَد",
+            "وهُناكَ الْمُرتضَى في قَيدٍ مُقَيَد",
+            "قَد تَمَادى في غِيابِ الْهَادِي مُرتَد"
+          ],
+          "en": [
+            "Within the home of the Chosen Prophet, Allah bears witness,",
+            "A door was broken — a door exalted in honour and dignity.",
+            "And there stood al-Murtadha (Imam Ali), bound in chains,",
+            "While a renegade went to extremes in the absence of the Guide."
+          ]
+        }
+      ]
+    }
+  ]
+}
