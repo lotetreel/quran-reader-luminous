@@ -2766,6 +2766,32 @@ body.majlis-open #progressBar { display: none; }
 .mj-refrain-ar { font-family: var(--font-arabic); font-size: 1.45em; line-height: 1.5; color: var(--mj-accent); }
 .mj-refrain-en { font-family: var(--font-body); font-style: italic; color: var(--mj-muted); }
 
+/* the chorus, between the verses */
+.mj-chorus-orn { width: calc(40px * var(--mfit)); height: calc(40px * var(--mfit)); margin-bottom: calc(6px * var(--mfit)); }
+.mj-chorus-ar {
+  display: flex; flex-direction: column; align-items: center;
+  font-family: var(--font-arabic);
+  font-size: calc(3.8rem * var(--mfit));
+  line-height: 1.45;
+  color: var(--mj-accent);
+}
+.mj-chorus-ar span {
+  white-space: nowrap;
+  text-shadow: 0 0 0.45em color-mix(in srgb, var(--mj-glow) 28%, transparent);
+  /* in, one after another; then each brightens in turn, like the gathering answering */
+  animation: mjIn 0.9s ease both, mjChant 3.6s ease-in-out infinite;
+  animation-delay: calc(var(--k) * 260ms), calc(1.4s + var(--k) * 1.2s);
+}
+.mj-chorus-en {
+  margin-top: calc(14px * var(--mfit));
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: calc(1.45rem * var(--mfit));
+  line-height: 1.35;
+  color: var(--mj-muted);
+  animation: mjIn 1s ease 0.9s both;
+}
+
 /* --- verse navigation --- */
 .mj-nav {
   position: relative;
@@ -2844,6 +2870,10 @@ body.majlis-open #progressBar { display: none; }
   88% { opacity: var(--o); }
   100% { transform: translate3d(0, 110vh, 0) rotate(var(--sp)); opacity: 0; }
 }
+@keyframes mjChant {
+  0%, 40%, 100% { color: var(--mj-accent); text-shadow: 0 0 0.45em color-mix(in srgb, var(--mj-glow) 28%, transparent); }
+  14% { color: color-mix(in srgb, var(--mj-accent) 50%, #fff); text-shadow: 0 0 0.8em color-mix(in srgb, var(--mj-glow) 70%, transparent); }
+}
 @keyframes mjFlash {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--mj-accent) 50%, transparent); border-color: var(--mj-accent); color: var(--mj-accent); }
   100% { box-shadow: 0 0 0 14px transparent; }
@@ -2852,6 +2882,7 @@ body.majlis-open #progressBar { display: none; }
   .mj-slide, .mj-slide * { animation-delay: 0ms !important; animation-duration: 0.01ms !important; }
   .mj-halo, .mj-bg-rosette { animation: none !important; }
   .mj-petals { display: none !important; }
+  .mj-chorus-ar span { animation: none !important; }
 }
 
 /* --- the landing page's way in: a small window onto the majlis --- */
